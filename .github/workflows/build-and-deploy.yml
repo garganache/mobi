@@ -1,0 +1,45 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+
+  build-and-deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_NAMESPACE: garganache
+      BACKEND_IMAGE: ghcr.io/garganache/mobi-backend
+      FRONTEND_IMAGE: ghcr.io/garganache/mobi-frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker auth
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build backend image
+        run: |
+          docker build -t $BACKEND_IMAGE:${{ github.sha }} backend
+
+      - name: Build frontend image
+        run: |
+          docker build -t $FRONTEND_IMAGE:${{ github.sha }} frontend
+
+      - name: Push backend image
+        run: |
+          docker push $BACKEND_IMAGE:${{ github.sha }}
+
+      - name: Push frontend image
+        run: |
+          docker push $FRONTEND_IMAGE:${{ github.sha }}
+
+      # TODO: Add K8s deploy steps once manifests/cluster wiring are ready
