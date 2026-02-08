@@ -1,0 +1,50 @@
+name: Terraform Dev Deploy
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "infra/terraform/**"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "infra/terraform/**"
+
+permissions:
+  contents: read
+
+jobs:
+  terraform-dev:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/terraform/envs/dev
+
+    env:
+      SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+      SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+      SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
+      SCW_DEFAULT_REGION: ${{ secrets.SCW_DEFAULT_REGION }}
+      TF_VAR_scw_access_key: ${{ secrets.SCW_ACCESS_KEY }}
+      TF_VAR_scw_secret_key: ${{ secrets.SCW_SECRET_KEY }}
+      TF_VAR_scw_project_id: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
+      TF_VAR_scw_region: ${{ secrets.SCW_DEFAULT_REGION }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      - name: Terraform Plan
+        run: terraform plan -input=false
+
+      - name: Terraform Apply (main only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: terraform apply -input=false -auto-approve
