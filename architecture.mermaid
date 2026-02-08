@@ -1,0 +1,52 @@
+graph TD
+    subgraph Frontend [User Interface - Svelte]
+        UI[Svelte Web App]
+        SSE[SSE/WebSocket Listener]
+    end
+
+    subgraph Backend [Orchestrator - Python/FastAPI]
+        API[FastAPI Router]
+        DB[(PostgreSQL + JSONB)]
+        Redis[(Redis Streams / PubSub)]
+    end
+
+    subgraph Scaling_Workers [AI Processing Pods]
+        VPod[Video/3D Pod]
+        IPod[Photo/Vision Pod]
+        DPod[Document/Sketch Pod]
+        PPod[Public Data Pod]
+    end
+
+    subgraph External [External Truth Sources]
+        ANCPI[ANCPI / Cadastre]
+        Risk[Seismic Risk API]
+    end
+
+    %% Ingestion Flow
+    UI -->|1. Upload Media & Address| API
+    API -->|2. Write Raw Media| S3[Object Storage]
+    
+    %% Redis Event Bus
+    API -->|3. Publish 'IngestionTask'| Redis
+    
+    %% Task Distribution
+    Redis -->|Consume| VPod
+    Redis -->|Consume| IPod
+    Redis -->|Consume| DPod
+    Redis -->|Consume| PPod
+
+    %% External Data Fetching
+    PPod <-->|4. Verify| ANCPI
+    PPod <-->|4. Verify| Risk
+
+    %% Atomic State Updates
+    VPod -->|5. Update JSONB| DB
+    IPod -->|5. Update JSONB| DB
+    DPod -->|5. Update JSONB| DB
+    PPod -->|5. Update JSONB| DB
+
+    %% Real-time Feedback Loop
+    DB -.->|6. DB Trigger| Redis
+    Redis -.->|7. Notify| API
+    API -.->|8. Push Question/Status| SSE
+    SSE -.->|9. Update UI| UI
