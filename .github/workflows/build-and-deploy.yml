@@ -66,11 +66,13 @@ jobs:
           SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
           SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
+          SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
           SCW_DEFAULT_REGION: ${{ secrets.SCW_DEFAULT_REGION }}
         run: |
           scw init \
             secret-key="$SCW_SECRET_KEY" \
             access-key="$SCW_ACCESS_KEY" \
+            organization-id="$SCW_DEFAULT_ORGANIZATION_ID" \
             project-id="$SCW_DEFAULT_PROJECT_ID" \
             region="$SCW_DEFAULT_REGION" \
             send-telemetry=false \
