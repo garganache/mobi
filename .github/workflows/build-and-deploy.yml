@@ -106,6 +106,15 @@ jobs:
             --from-literal=DATABASE_URL="${MOBI_DB_URL}" \
             --dry-run=client -o yaml | kubectl apply -f -
 
+      - name: Ensure backend secrets exist
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          # Create or update the mobi-backend-secrets with API keys
+          kubectl -n mobi-dev create secret generic mobi-backend-secrets \
+            --from-literal=OPENAI_API_KEY="${OPENAI_API_KEY}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
       - name: Deploy to Kubernetes
         run: |
           # Apply core app manifests (deployments, services, ingresses)

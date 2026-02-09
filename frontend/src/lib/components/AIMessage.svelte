@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { fade, fly } from 'svelte/transition';
+  import { fade, fly, scale } from 'svelte/transition';
   import { flip } from 'svelte/animate';
 
   export let message: string = '';
@@ -37,6 +37,7 @@
   in:fly={{ x: avatar === 'ai' ? -20 : 20, duration: animationDuration }}
   role="article"
   aria-label={avatar === 'ai' ? 'AI assistant message' : 'User message'}
+  data-testid="ai-guidance-message"
 >
   {#if showAvatar}
     <div 
@@ -103,6 +104,14 @@
     gap: 0.75rem;
     margin: 1rem 0;
     align-items: flex-start;
+    background: transparent;
+  }
+
+  .ai-message.ai {
+    background: rgb(59, 130, 246);
+    color: rgb(255, 255, 255);
+    padding: 1rem;
+    border-radius: 1rem;
   }
 
   .ai-message.user {
@@ -155,8 +164,7 @@
   }
 
   .ai-message.ai .message-bubble {
-    background: #f3f4f6;
-    color: #1f2937;
+    background: transparent;
     border-bottom-left-radius: 0.25rem;
   }
 

@@ -23,6 +23,11 @@ spec:
                 secretKeyRef:
                   name: mobi-backend-db
                   key: DATABASE_URL
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: mobi-backend-secrets
+                  key: OPENAI_API_KEY
           ports:
             - containerPort: 8000
           readinessProbe:

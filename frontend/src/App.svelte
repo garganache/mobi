@@ -17,7 +17,7 @@
 
   let currentStep = 0;
   let completionPercentage = 0;
-  let aiMessage = '';
+  let aiMessage = 'Drop a photo to start your listing';
   let formSchema: FieldSchema[] = [];
   let isLoading = false;
   let error: string | null = null;
@@ -158,6 +158,16 @@
   </header>
 
   <div class="app-content">
+    {#if aiMessage}
+      <div class="ai-message-container" in:fly={{ y: -20, duration: 400 }}>
+        <AIMessage 
+          message={aiMessage} 
+          avatar="ai"
+          typing={isLoading}
+        />
+      </div>
+    {/if}
+
     {#if formSchema.length === 0}
       <!-- Initial state - show image upload -->
       <div class="initial-upload" in:fade={{ duration: 500 }}>
@@ -173,16 +183,6 @@
     {:else}
       <!-- Progressive form -->
       <div class="progressive-form" in:fade={{ duration: 500 }}>
-        {#if aiMessage}
-          <div class="ai-message-container" in:fly={{ y: -20, duration: 400 }}>
-            <AIMessage 
-              message={aiMessage} 
-              avatar="ai"
-              typing={isLoading}
-            />
-          </div>
-        {/if}
-
         <div class="form-container">
           <AnimatedDynamicForm 
             schema={formSchema}

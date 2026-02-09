@@ -17,8 +17,8 @@ start:
 	@echo ""
 	@# Start backend in background
 	@cd backend && \
-		(. .venv/bin/activate 2>/dev/null || (python3 -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt)) && \
-		DATABASE_URL=sqlite:///test.db uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 &
+		(test -d .venv || uv sync) && \
+		DATABASE_URL=sqlite:///test.db uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 &
 	@# Start frontend in background
 	@cd frontend && npm install >/dev/null 2>&1 && npm run dev &
 	@echo ""
@@ -27,13 +27,10 @@ start:
 	@# Keep the make process running
 	@wait
 
-# Backend tests (assumes python3 is installed)
+# Backend tests (uses uv)
 
 test-backend:
-	cd backend && python3 -m venv .venv && \
-		. .venv/bin/activate && \
-		pip install -r requirements.txt >/dev/null && \
-		PYTHONPATH=. pytest
+	cd backend && uv sync && uv run pytest
 
 # Frontend unit tests (Vitest)
 
