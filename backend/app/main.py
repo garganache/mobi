@@ -167,7 +167,13 @@ def analyze_step(request: AnalyzeStepRequest):
                 image_data = img_bytes.getvalue()
             
             # Analyze the image using vision model
-            vision_result = analyze_property_image(image_data, model_type="mock")
+            # Use OpenAI if API key is available, otherwise use mock
+            model_type = "openai" if os.getenv("OPENAI_API_KEY") else "mock"
+            vision_result = analyze_property_image(
+                image_data, 
+                model_type=model_type,
+                api_key=os.getenv("OPENAI_API_KEY") if model_type == "openai" else None
+            )
             
             # Update extracted data with vision model results
             if vision_result.get("property_type"):

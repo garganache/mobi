@@ -418,7 +418,8 @@ def get_vision_model(model_type: str = "mock", **kwargs) -> VisionModelInterface
 
 def analyze_property_image(image_data: bytes, model_type: str = "mock", 
                           prompt: str = DEFAULT_PROPERTY_PROMPT, 
-                          preprocess: bool = True) -> Dict[str, Any]:
+                          preprocess: bool = True,
+                          **model_kwargs) -> Dict[str, Any]:
     """
     Convenience function to analyze a property image.
     
@@ -427,6 +428,7 @@ def analyze_property_image(image_data: bytes, model_type: str = "mock",
         model_type: Type of model to use ('mock', 'openai', 'anthropic')
         prompt: Custom prompt for the vision model
         preprocess: Whether to preprocess the image
+        **model_kwargs: Additional arguments passed to model constructor (e.g., api_key)
         
     Returns:
         Dictionary containing analyzed property data
@@ -438,6 +440,6 @@ def analyze_property_image(image_data: bytes, model_type: str = "mock",
     if preprocess:
         image_data = preprocess_image(image_data)
     
-    # Get vision model and analyze
-    vision_model = get_vision_model(model_type)
+    # Create vision model directly with kwargs instead of using global instance
+    vision_model = create_vision_model(model_type, **model_kwargs)
     return vision_model.analyze_image(image_data, prompt)
