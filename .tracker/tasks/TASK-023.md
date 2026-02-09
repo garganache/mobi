@@ -1,7 +1,7 @@
 # TASK-023: Write unit tests for field suggestion algorithm
 
 **Story:** STORY-004
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Estimated:** 2h
 
@@ -21,8 +21,8 @@ Test the field suggestion algorithm to verify it prioritizes fields correctly an
 
 ## Definition of Done
 
-- [ ] Test file created for suggestion algorithm
-- [ ] All prioritization rules tested
-- [ ] Different property types tested
-- [ ] Edge cases covered
-- [ ] Algorithm logic documented in tests
+- [x] Test file created for suggestion algorithm
+- [x] All prioritization rules tested
+- [x] Different property types tested
+- [x] Edge cases covered
+- [x] Algorithm logic documented in tests

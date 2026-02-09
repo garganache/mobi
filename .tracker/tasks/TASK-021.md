@@ -1,7 +1,7 @@
 # TASK-021: Write tests for different input types handling
 
 **Story:** STORY-003
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Estimated:** 2h
 
@@ -21,8 +21,8 @@ Test that the endpoint correctly handles different input types (image upload, te
 
 ## Definition of Done
 
-- [ ] Test file created for input handling
-- [ ] All input types tested
-- [ ] File upload mocked appropriately
-- [ ] Error cases covered
-- [ ] Performance tested with large images
+- [x] Test file created for input handling
+- [x] All input types tested
+- [x] File upload mocked appropriately
+- [x] Error cases covered
+- [x] Performance tested with large images

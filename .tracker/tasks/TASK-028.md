@@ -21,9 +21,9 @@ Test the AI messaging system to verify that guidance prompts display correctly a
 
 ## Definition of Done
 
-- [ ] Playwright test file created
-- [ ] AI message display verified
-- [ ] Message updates tested at key points
-- [ ] Accessibility of messages verified
-- [ ] Tests verify message content relevance
-- [ ] Visual positioning tested
+- [x] Playwright test file created
+- [x] AI message display verified
+- [x] Message updates tested at key points
+- [x] Accessibility of messages verified
+- [x] Tests verify message content relevance
+- [x] Visual positioning tested

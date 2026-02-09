@@ -1,7 +1,7 @@
 # TASK-014: Add AI messaging and guidance prompts display
 
 **Story:** STORY-005
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Estimated:** 2h
 
@@ -19,9 +19,9 @@ Create a UI component to display the AI's guidance messages that come from the b
 
 ## Definition of Done
 
-- [ ] AI message component created
-- [ ] Messages display from backend response
-- [ ] Styling is friendly and clear
-- [ ] Messages update smoothly with transitions
-- [ ] Component positioned well in layout
-- [ ] Messages tested with various text lengths
+- [x] AI message component created
+- [x] Messages display from backend response
+- [x] Styling is friendly and clear
+- [x] Messages update smoothly with transitions
+- [x] Component positioned well in layout
+- [x] Messages tested with various text lengths

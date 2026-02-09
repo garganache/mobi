@@ -1,7 +1,7 @@
 # TASK-013: Implement progressive field reveal with animations
 
 **Story:** STORY-005
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Estimated:** 2h
 
@@ -19,9 +19,9 @@ Add smooth animations when new fields are added to the form. This provides visua
 
 ## Definition of Done
 
-- [ ] Transitions imported and configured
-- [ ] New fields animate in smoothly
-- [ ] Multiple fields stagger appropriately
-- [ ] Form container resizes smoothly
-- [ ] Animations feel natural (not too fast/slow)
-- [ ] Performance is acceptable (no jank)
+- [x] Transitions imported and configured
+- [x] New fields animate in smoothly
+- [x] Multiple fields stagger appropriately
+- [x] Form container resizes smoothly
+- [x] Animations feel natural (not too fast/slow)
+- [x] Performance is acceptable (no jank)

@@ -1,7 +1,7 @@
 # TASK-022: Write unit tests for feature extraction logic
 
 **Story:** STORY-004
-**Status:** todo
+**Status:** completed
 **Priority:** high
 **Estimated:** 2h
 
@@ -21,8 +21,8 @@ Test the feature extraction logic that processes vision model output into struct
 
 ## Definition of Done
 
-- [ ] Test file created for feature extraction
-- [ ] All feature types tested
-- [ ] Mock vision model outputs used
-- [ ] Edge cases covered
-- [ ] Test coverage >85%
+- [x] Test file created for feature extraction
+- [x] All feature types tested
+- [x] Mock vision model outputs used
+- [x] Edge cases covered
+- [x] Test coverage >85%

@@ -1,7 +1,7 @@
 # TASK-020: Write integration tests for UI manifest generation
 
 **Story:** STORY-003
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Estimated:** 2h
 
@@ -20,8 +20,8 @@ Test the UI manifest generation logic to ensure it creates valid schemas based o
 
 ## Definition of Done
 
-- [ ] Integration test file created
-- [ ] Tests cover multiple property types
-- [ ] Schema validation tested
-- [ ] Field prioritization verified
-- [ ] AI message generation tested
+- [x] Integration test file created
+- [x] Tests cover multiple property types
+- [x] Schema validation tested
+- [x] Field prioritization verified
+- [x] AI message generation tested

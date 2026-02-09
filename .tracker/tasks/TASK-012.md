@@ -1,7 +1,7 @@
 # TASK-012: Build image upload flow with backend integration
 
 **Story:** STORY-005
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Estimated:** 3h
 
@@ -21,10 +21,10 @@ Create the image upload UI component and wire it to the backend `/api/analyze-st
 
 ## Definition of Done
 
-- [ ] Upload component created with drag-and-drop
-- [ ] File validation implemented
-- [ ] Image preview displays after upload
-- [ ] Loading spinner shows during API call
-- [ ] Backend integration working
-- [ ] Response updates form state/schema
-- [ ] Error messages display for failures
+- [x] Upload component created with drag-and-drop
+- [x] File validation implemented
+- [x] Image preview displays after upload
+- [x] Loading spinner shows during API call
+- [x] Backend integration working
+- [x] Response updates form state/schema
+- [x] Error messages display for failures

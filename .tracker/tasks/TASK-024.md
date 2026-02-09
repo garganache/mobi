@@ -1,7 +1,7 @@
 # TASK-024: Write tests for vision model integration (mocked)
 
 **Story:** STORY-004
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Estimated:** 2h
 
@@ -21,8 +21,8 @@ Test the vision model integration layer with mocked API responses. Verify reques
 
 ## Definition of Done
 
-- [ ] Test file created with mocked API
-- [ ] API client tested independently
-- [ ] Error handling verified
-- [ ] Timeout handling tested
-- [ ] Mock responses realistic
+- [x] Test file created with mocked API
+- [x] API client tested independently
+- [x] Error handling verified
+- [x] Timeout handling tested
+- [x] Mock responses realistic

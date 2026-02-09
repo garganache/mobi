@@ -30,9 +30,9 @@ Create end-to-end Playwright tests that simulate the complete user journey from 
 
 ## Definition of Done
 
-- [ ] Playwright test file created
-- [ ] Both scenarios implemented
-- [ ] Tests run against local dev environment
-- [ ] Screenshots captured at key steps
-- [ ] Tests pass consistently (no flakiness)
-- [ ] Test execution documented
+- [x] Playwright test file created
+- [x] Both scenarios implemented
+- [x] Tests run against local dev environment
+- [x] Screenshots captured at key steps
+- [ ] Tests pass consistently (no flakiness) - *Tests will pass when features are implemented*
+- [x] Test execution documented

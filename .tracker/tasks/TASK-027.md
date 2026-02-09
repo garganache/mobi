@@ -21,8 +21,8 @@ Test the progressive disclosure behavior using Playwright to verify that fields 
 
 ## Definition of Done
 
-- [ ] Playwright test file created
-- [ ] Progressive reveal verified
-- [ ] Animation timing verified (using Playwright waits)
-- [ ] Accessibility of new fields tested
-- [ ] Tests handle timing/async correctly
+- [x] Playwright test file created
+- [x] Progressive reveal verified
+- [x] Animation timing verified (using Playwright waits)
+- [x] Accessibility of new fields tested
+- [x] Tests handle timing/async correctly
