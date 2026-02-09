@@ -1,6 +1,6 @@
 # Terraform Plan for Scaleway Mobi Infrastructure
 
-This document defines a **step‑by‑step, implementation‑ready plan** for creating Terraform code that provisions the architecture you described on Scaleway:
+This document defines a **step‑by‑step, implementation‑ready plan** for creating Terraform code that provisions the architecture you described on Scaleway (dev environment first, then staging/prod):
 
 - Svelte frontend
 - FastAPI backend (orchestrator)
