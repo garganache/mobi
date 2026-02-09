@@ -90,13 +90,49 @@ def test_image_input_response_structure(valid_image_request):
     response = client.post("/analyze-step", json=valid_image_request)
     data = response.json()
     
-    # Should have extracted data from image
-    assert "property_type" in data["extracted_data"]
+    # Should NOT auto-fill property_type in extracted_data (requires user confirmation)
+    assert "property_type" not in data["extracted_data"]
+    
     # AI message should mention property details (varies based on mock/fallback)
     assert len(data["ai_message"]) > 0
     assert "property" in data["ai_message"].lower() or "bedroom" in data["ai_message"].lower()
     assert data["step_number"] >= 1
     assert isinstance(data["completion_percentage"], float)
+
+
+def test_image_upload_requires_property_type_confirmation(valid_image_request):
+    """Test that image upload shows property_type field for user confirmation.
+    
+    Regression test for bug where user could skip property type selection.
+    After image upload, property_type should be shown as a field with AI-detected default.
+    """
+    response = client.post("/analyze-step", json=valid_image_request)
+    data = response.json()
+    
+    # property_type should NOT be in extracted_data (not confirmed yet)
+    assert "property_type" not in data["extracted_data"]
+    
+    # property_type SHOULD be in ui_schema
+    property_type_fields = [f for f in data["ui_schema"] if f["id"] == "property_type"]
+    assert len(property_type_fields) == 1, "property_type field should be shown"
+    
+    property_type_field = property_type_fields[0]
+    
+    # Field should have a default value from AI detection
+    assert "default" in property_type_field
+    assert property_type_field["default"] is not None
+    assert property_type_field["default"] in ["apartment", "house", "condo", "townhouse"]
+    
+    # Field should be required
+    assert property_type_field.get("required") == True
+    
+    # Field should be a select input with options
+    assert property_type_field["component_type"] == "select"
+    assert "options" in property_type_field
+    assert len(property_type_field["options"]) > 0
+    
+    # AI message should prompt user to confirm
+    assert "confirm" in data["ai_message"].lower() or "type" in data["ai_message"].lower()
 
 
 def test_text_input_response_structure(valid_text_request):
