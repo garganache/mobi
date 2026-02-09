@@ -92,7 +92,7 @@ jobs:
       - name: Reset app ingresses
         run: |
           # Delete existing app ingresses to avoid host/path conflicts on re-apply
-          kubectl -n mobi-dev delete ingress mobi-backend-ingress mobi-frontend-ingress --ignore-not-found=true
+          kubectl -n mobi-dev delete ingress mobi-ingress mobi-backend-ingress mobi-frontend-ingress --ignore-not-found=true
 
       - name: Deploy to Kubernetes
         run: |
