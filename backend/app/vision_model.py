@@ -383,8 +383,8 @@ def preprocess_image(image_data: bytes, max_size: int = 1024, quality: int = 85)
 
 # Default prompt for property analysis
 DEFAULT_PROPERTY_PROMPT = """
-You are analyzing property images for a home seller who is trying to sell his property.
-This analysis will help them understand the property features, condition, and amenities to make an informed buying decision.
+You are analyzing property images for a home seller who is creating a property listing.
+This analysis will help them accurately describe their property features, condition, and amenities to attract potential buyers.
 
 Analyze this property image and provide a structured response with the following information:
 
@@ -407,7 +407,7 @@ Please respond in JSON format like this example:
   "condition": "excellent"
 }
 
-Be specific and accurate based only on what you can see in the image. Focus on details that would be important to a potential buyer.
+Be specific and accurate based only on what you can see in the image. Focus on details that would be valuable for the seller to highlight in their listing.
 """
 
 
