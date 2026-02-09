@@ -28,7 +28,7 @@ jobs:
         run: |
           echo "Scaleway env configured"
 
-      - name: Terraform init & apply (dev)
+      - name: Terraform init (dev)
         working-directory: infra/terraform/envs/dev
         env:
           SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
@@ -41,7 +41,6 @@ jobs:
           TF_VAR_scw_region: ${{ secrets.SCW_DEFAULT_REGION }}
         run: |
           terraform init -input=false
-          terraform apply -input=false -auto-approve
 
       - name: Capture K8s cluster id
         working-directory: infra/terraform/envs/dev
