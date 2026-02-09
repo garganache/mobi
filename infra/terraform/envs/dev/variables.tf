@@ -17,3 +17,8 @@ variable "scw_region" {
   type    = string
   default = "fr-par"
 }
+
+variable "mobi_db_password" {
+  type      = string
+  sensitive = true
+}

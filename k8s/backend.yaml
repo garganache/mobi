@@ -17,6 +17,12 @@ spec:
         - name: mobi-backend
           image: rg.pl-waw.scw.cloud/garganache/mobi-backend:latest
           imagePullPolicy: IfNotPresent
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: mobi-backend-db
+                  key: DATABASE_URL
           ports:
             - containerPort: 8000
           readinessProbe:
