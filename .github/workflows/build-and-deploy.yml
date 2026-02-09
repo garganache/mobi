@@ -39,7 +39,6 @@ jobs:
           TF_VAR_scw_secret_key: ${{ secrets.SCW_SECRET_KEY }}
           TF_VAR_scw_project_id: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
           TF_VAR_scw_region: ${{ secrets.SCW_DEFAULT_REGION }}
-          TF_VAR_scw_private_network_id: ${{ secrets.SCW_PRIVATE_NETWORK_ID }}
         run: |
           terraform init -input=false
           terraform apply -input=false -auto-approve
@@ -111,9 +110,17 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-          kubectl apply -f k8s/
+          # Ensure namespace exists before other manifests
+          kubectl apply -f k8s/namespace.yaml
+
+          # Apply core app manifests
+          kubectl apply -f k8s/backend.yaml -f k8s/frontend.yaml -f k8s/ingress.yaml
+
+          # Update images to the commit-specific tags
           kubectl -n mobi-dev set image deployment/mobi-backend mobi-backend=$BACKEND_IMAGE:${{ github.sha }}
           kubectl -n mobi-dev set image deployment/mobi-frontend mobi-frontend=$FRONTEND_IMAGE:${{ github.sha }}
+
+          # Show deployed resources
           kubectl -n mobi-dev get pods
           echo "--- mobi-dev services ---"
           kubectl -n mobi-dev get svc
