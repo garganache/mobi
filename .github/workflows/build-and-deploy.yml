@@ -12,6 +12,7 @@ jobs:
       BACKEND_IMAGE: rg.pl-waw.scw.cloud/garganache/mobi-backend
       FRONTEND_IMAGE: rg.pl-waw.scw.cloud/garganache/mobi-frontend
       SCW_K8S_CLUSTER_ID: ${{ secrets.SCW_K8S_CLUSTER_ID }}
+      MOBI_DB_URL: ${{ secrets.MOBI_DB_URL }}
     steps:
       - uses: actions/checkout@v4
 
@@ -93,6 +94,13 @@ jobs:
         run: |
           # Delete existing app ingresses to avoid host/path conflicts on re-apply
           kubectl -n mobi-dev delete ingress mobi-ingress mobi-backend-ingress mobi-frontend-ingress --ignore-not-found=true
+
+      - name: Ensure backend DB secret exists
+        run: |
+          # Create or update the mobi-backend-db secret with the DATABASE_URL
+          kubectl -n mobi-dev create secret generic mobi-backend-db \
+            --from-literal=DATABASE_URL="${MOBI_DB_URL}" \
+            --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Deploy to Kubernetes
         run: |
