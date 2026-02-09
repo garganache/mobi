@@ -131,20 +131,20 @@ class MockVisionModel(VisionModelInterface):
 
 
 class OpenAIVisionModel(VisionModelInterface):
-    """OpenAI GPT-4o vision model implementation."""
+    """OpenAI GPT-4.1 vision model implementation."""
     
     def __init__(self, api_key: Optional[str] = None):
         try:
             import openai
             self.client = openai.OpenAI(api_key=api_key)
-            self.model = "gpt-4o"
+            self.model = "gpt-4.1"
         except ImportError:
             raise VisionModelError("openai package not installed. Install with: pip install openai")
         except Exception as e:
             raise VisionModelError(f"Failed to initialize OpenAI client: {e}")
     
     def analyze_image(self, image_data: bytes, prompt: str) -> Dict[str, Any]:
-        """Analyze image using OpenAI GPT-4o."""
+        """Analyze image using OpenAI GPT-4.1."""
         try:
             # Convert image to base64
             image_base64 = base64.b64encode(image_data).decode('utf-8')
