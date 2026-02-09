@@ -736,6 +736,187 @@ describe('listingStore', () => {
     });
   });
 
+  describe('Null safety (regression tests for 2026-02-09 bug)', () => {
+    it('toJSON handles null fieldState gracefully', () => {
+      // Simulate corrupted state with null fieldState
+      listingStore.loadState({
+        title: { value: 'Valid', userModified: true, source: 'user' },
+        // @ts-expect-error - testing null safety
+        corrupted: null,
+      });
+      
+      const json = listingStore.toJSON();
+      expect(json.title).toBe('Valid');
+      expect(json.corrupted).toBeNull();
+    });
+
+    it('toJSON handles undefined fieldState gracefully', () => {
+      listingStore.loadState({
+        title: { value: 'Valid', userModified: true, source: 'user' },
+        // @ts-expect-error - testing null safety
+        corrupted: undefined,
+      });
+      
+      const json = listingStore.toJSON();
+      expect(json.title).toBe('Valid');
+      expect(json.corrupted).toBeNull();
+    });
+
+    it('toJSON handles fieldState without value property', () => {
+      listingStore.loadState({
+        title: { value: 'Valid', userModified: true, source: 'user' },
+        // @ts-expect-error - testing null safety
+        incomplete: { userModified: false, source: 'ai' },
+      });
+      
+      const json = listingStore.toJSON();
+      expect(json.title).toBe('Valid');
+      expect(json.incomplete).toBeNull();
+    });
+
+    it('listingValues handles null fieldState gracefully', () => {
+      listingStore.loadState({
+        title: { value: 'Valid', userModified: true, source: 'user' },
+        // @ts-expect-error - testing null safety
+        corrupted: null,
+      });
+      
+      const values = get(listingValues);
+      expect(values.title).toBe('Valid');
+      expect(values.corrupted).toBeNull();
+    });
+
+    it('listingValues handles undefined fieldState', () => {
+      listingStore.loadState({
+        title: { value: 'Valid', userModified: true, source: 'user' },
+        // @ts-expect-error - testing null safety
+        corrupted: undefined,
+      });
+      
+      const values = get(listingValues);
+      expect(values.title).toBe('Valid');
+      expect(values.corrupted).toBeNull();
+    });
+
+    it('aiSuggestions handles null fieldState gracefully', () => {
+      listingStore.loadState({
+        title: { 
+          value: 'User', 
+          aiSuggested: 'AI',
+          userModified: true, 
+          source: 'user' 
+        },
+        // @ts-expect-error - testing null safety
+        corrupted: null,
+      });
+      
+      const suggestions = get(aiSuggestions);
+      expect(suggestions.title).toBe('AI');
+      expect(suggestions).not.toHaveProperty('corrupted');
+    });
+
+    it('aiSuggestions handles undefined fieldState', () => {
+      listingStore.loadState({
+        title: { 
+          value: 'User', 
+          aiSuggested: 'AI',
+          userModified: true, 
+          source: 'user' 
+        },
+        // @ts-expect-error - testing null safety
+        corrupted: undefined,
+      });
+      
+      const suggestions = get(aiSuggestions);
+      expect(suggestions.title).toBe('AI');
+      expect(suggestions).not.toHaveProperty('corrupted');
+    });
+
+    it('initField skips invalid field structures', () => {
+      // Manually corrupt the store state
+      listingStore.loadState({
+        // @ts-expect-error - testing null safety
+        corrupted: null,
+      });
+      
+      // initField should replace the null with a valid structure
+      listingStore.initField('corrupted', 'default');
+      
+      const value = listingStore.getFieldValue('corrupted');
+      expect(value).toBe('default');
+    });
+
+    it('initField validates field structure before skipping', () => {
+      // Set up invalid field structure
+      listingStore.loadState({
+        // @ts-expect-error - testing validation
+        invalid: { notAValue: 'oops' },
+      });
+      
+      // initField should detect invalid structure and reinitialize
+      listingStore.initField('invalid', 'fixed');
+      
+      const state = get(listingStore);
+      expect(state.invalid.value).toBe('fixed');
+      expect(state.invalid.source).toBe('default');
+    });
+
+    it('handles mixed valid and invalid fieldStates in toJSON', () => {
+      listingStore.loadState({
+        valid1: { value: 'test1', userModified: true, source: 'user' },
+        // @ts-expect-error - testing null safety
+        invalid1: null,
+        valid2: { value: 'test2', userModified: false, source: 'ai' },
+        // @ts-expect-error - testing null safety
+        invalid2: undefined,
+        valid3: { value: 42, userModified: true, source: 'user' },
+      });
+      
+      const json = listingStore.toJSON();
+      expect(json.valid1).toBe('test1');
+      expect(json.valid2).toBe('test2');
+      expect(json.valid3).toBe(42);
+      expect(json.invalid1).toBeNull();
+      expect(json.invalid2).toBeNull();
+    });
+
+    it('handles empty object as fieldState', () => {
+      listingStore.loadState({
+        title: { value: 'Valid', userModified: true, source: 'user' },
+        // @ts-expect-error - testing null safety
+        empty: {},
+      });
+      
+      const json = listingStore.toJSON();
+      expect(json.title).toBe('Valid');
+      expect(json.empty).toBeNull();
+    });
+
+    it('survives multiple sequential null safety issues', () => {
+      // Initial valid state
+      listingStore.setFieldValue('title', 'Test');
+      
+      // Corrupt it
+      listingStore.loadState({
+        // @ts-expect-error - testing null safety
+        field1: null,
+        // @ts-expect-error - testing null safety
+        field2: undefined,
+        // @ts-expect-error - testing null safety
+        field3: {},
+      });
+      
+      // Store should still be usable
+      expect(() => listingStore.toJSON()).not.toThrow();
+      expect(() => get(listingValues)).not.toThrow();
+      expect(() => get(aiSuggestions)).not.toThrow();
+      
+      // Can still set new values
+      listingStore.setFieldValue('newField', 'works');
+      expect(listingStore.getFieldValue('newField')).toBe('works');
+    });
+  });
+
   describe('Edge cases and error handling', () => {
     it('handles rapid successive updates to same field', () => {
       listingStore.setFieldValue('counter', 1);
