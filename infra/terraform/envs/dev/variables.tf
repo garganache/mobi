@@ -17,3 +17,8 @@ variable "scw_region" {
   type    = string
   default = "fr-par"
 }
+
+variable "scw_private_network_id" {
+  type      = string
+  sensitive = true
+}

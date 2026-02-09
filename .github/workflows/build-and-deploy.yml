@@ -39,6 +39,7 @@ jobs:
           TF_VAR_scw_secret_key: ${{ secrets.SCW_SECRET_KEY }}
           TF_VAR_scw_project_id: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
           TF_VAR_scw_region: ${{ secrets.SCW_DEFAULT_REGION }}
+          TF_VAR_scw_private_network_id: ${{ secrets.SCW_PRIVATE_NETWORK_ID }}
         run: |
           terraform init -input=false
           terraform apply -input=false -auto-approve

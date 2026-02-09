@@ -12,7 +12,9 @@ resource "scaleway_k8s_cluster" "dev" {
   tags = ["env:dev", "app:mobi"]
 
   # Explicit Kapsule version (from Scaleway UI)
-  version                     = "1.35.0"
+  version            = "1.35.0"
+  private_network_id = var.scw_private_network_id
+
   delete_additional_resources = true
 }
 
