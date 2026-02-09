@@ -83,7 +83,8 @@ jobs:
           SCW_DEFAULT_REGION: ${{ secrets.SCW_DEFAULT_REGION }}
         run: |
           CLUSTER_ID=$(cat k8s_cluster_id)
-          scw k8s kubeconfig install "$CLUSTER_ID" --export > kubeconfig
+          # Newer scw CLI prints kubeconfig to stdout by default
+          scw k8s kubeconfig install "$CLUSTER_ID" > kubeconfig
           mkdir -p ~/.kube
           mv kubeconfig ~/.kube/config
 
