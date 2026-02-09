@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mobi-frontend
+  namespace: mobi-dev
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mobi-frontend
+  template:
+    metadata:
+      labels:
+        app: mobi-frontend
+    spec:
+      containers:
+        - name: mobi-frontend
+          image: rg.pl-waw.scw.cloud/garganache/mobi-frontend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mobi-frontend
+  namespace: mobi-dev
+spec:
+  selector:
+    app: mobi-frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+  type: ClusterIP
