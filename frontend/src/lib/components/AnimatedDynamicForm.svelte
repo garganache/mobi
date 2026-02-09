@@ -134,7 +134,7 @@
             this={component}
             id={field.id}
             label={field.label}
-            bind:value={$listingStore[field.id].value}
+            bind:value={$listingStore[field.id]?.value}
             placeholder={field.placeholder}
             options={field.options}
             min={field.min}
