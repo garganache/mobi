@@ -9,6 +9,10 @@ test('user can save and see a description', async ({ page }) => {
 
   await page.goto(BASE_URL, { waitUntil: 'networkidle' });
 
+  // Debug output for CI: see what the page actually looks like
+  console.log('E2E: loaded URL', BASE_URL);
+  console.log('E2E: page content snippet:', (await page.content()).slice(0, 500));
+
   const textarea = page.locator('#description');
   const saveButton = page.locator('button', { hasText: 'Save' });
 
