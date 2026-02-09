@@ -68,7 +68,13 @@ jobs:
           SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
           SCW_DEFAULT_REGION: ${{ secrets.SCW_DEFAULT_REGION }}
         run: |
-          scw init non-interactive
+          scw init \
+            secret-key="$SCW_SECRET_KEY" \
+            access-key="$SCW_ACCESS_KEY" \
+            project-id="$SCW_DEFAULT_PROJECT_ID" \
+            region="$SCW_DEFAULT_REGION" \
+            send-telemetry=false \
+            with-ssh-key=false
 
       - name: Install kubeconfig for cluster
         env:
