@@ -2,6 +2,12 @@ data "scaleway_account_project" "current" {
   project_id = var.scw_project_id
 }
 
+# Dev private network managed by Terraform
+resource "scaleway_vpc_private_network" "dev" {
+  name = "mobi-dev-private-network"
+  tags = ["env:dev", "app:mobi"]
+}
+
 # Minimal Kapsule cluster for dev
 resource "scaleway_k8s_cluster" "dev" {
   name        = "mobi-dev-cluster"
@@ -13,7 +19,7 @@ resource "scaleway_k8s_cluster" "dev" {
 
   # Explicit Kapsule version (from Scaleway UI)
   version            = "1.35.0"
-  private_network_id = var.scw_private_network_id
+  private_network_id = scaleway_vpc_private_network.dev.id
 
   delete_additional_resources = true
 }
