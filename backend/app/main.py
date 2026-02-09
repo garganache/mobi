@@ -56,6 +56,12 @@ def on_startup() -> None:
     init_db()
 
 
+@app.get("/health")
+def health() -> dict[str, str]:
+    """Simple health check for Kubernetes probes."""
+    return {"status": "ok"}
+
+
 @app.post("/description", response_model=DescriptionOut)
 def create_description(payload: DescriptionIn, db: Session = Depends(get_db)):
     text = payload.text.strip()
