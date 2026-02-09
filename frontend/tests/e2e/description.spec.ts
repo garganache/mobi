@@ -7,6 +7,13 @@ const BASE_URL = process.env.E2E_BASE_URL || 'http://localhost:5173';
 test('user can save and see a description', async ({ page }) => {
   test.setTimeout(60000);
 
+  page.on('console', (msg) => {
+    console.log('browser console:', msg.type(), msg.text());
+  });
+  page.on('pageerror', (err) => {
+    console.log('pageerror:', err.message);
+  });
+
   await page.goto(BASE_URL, { waitUntil: 'networkidle' });
 
   // Debug output for CI: see what the page actually looks like
