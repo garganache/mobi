@@ -137,13 +137,10 @@ def analyze_step(request: AnalyzeStepRequest):
     - `completion_percentage`: Estimated progress
     """
     
-    # Use orchestrator to determine next fields
-    next_fields = orchestrator.get_next_fields(request.current_data)
-    ai_message = orchestrator.generate_ai_message(request.current_data, next_fields)
-    completion_percentage = orchestrator.calculate_completion_percentage(request.current_data)
-    
     # Handle different input types
     extracted_data = request.current_data.copy()
+    detected_property_type = None  # Track AI-detected property type for default value
+    ai_message = None  # AI message to show user
     
     if request.input_type == 'image':
         try:
@@ -175,11 +172,9 @@ def analyze_step(request: AnalyzeStepRequest):
                 api_key=os.getenv("OPENAI_API_KEY") if model_type == "openai" else None
             )
             
-            # Update extracted data with vision model results
-            if vision_result.get("property_type"):
-                extracted_data["property_type"] = vision_result["property_type"]
-            else:
-                extracted_data["property_type"] = "apartment"
+            # Store property_type as a suggestion, not as extracted data
+            # This ensures the user sees and confirms the detected property type
+            detected_property_type = vision_result.get("property_type") or "apartment"
             
             if vision_result.get("rooms"):
                 for room_type, count in vision_result["rooms"].items():
@@ -205,36 +200,45 @@ def analyze_step(request: AnalyzeStepRequest):
                 extracted_data["has_pool"] = False
             
             # Generate AI message based on what was detected
-            property_type = vision_result.get("property_type", "property")
-            if property_type == "apartment":
-                ai_message = f"I see a modern apartment with what looks like {extracted_data.get('bedrooms', 2)} bedrooms. Is this correct?"
+            bedrooms_count = extracted_data.get('bedrooms', 2)
+            if detected_property_type == "apartment":
+                ai_message = f"I see what looks like an apartment with {bedrooms_count} bedrooms. Please confirm the property type below."
             else:
-                ai_message = f"I see a {property_type} with what looks like {extracted_data.get('bedrooms', 2)} bedrooms. Is this correct?"
+                ai_message = f"I see what looks like a {detected_property_type} with {bedrooms_count} bedrooms. Please confirm the property type below."
                 
         except Exception as e:
             logger.error(f"Vision model analysis failed: {e}")
-            # Fallback to basic simulation
-            if "property_type" not in extracted_data:
-                extracted_data["property_type"] = "apartment"
+            # Fallback to basic defaults (don't set property_type)
+            detected_property_type = "apartment"
             if "bedrooms" not in extracted_data:
                 extracted_data["bedrooms"] = 2
             if "has_pool" not in extracted_data:
                 extracted_data["has_pool"] = False
                 
-            ai_message = "I see a modern apartment with what looks like 2 bedrooms. Is this correct?"
+            ai_message = "I see what looks like an apartment with 2 bedrooms. Please confirm the property type below."
         
     elif request.input_type == 'text':
         # For text input, we might extract some basic info
         # This is a simplified implementation
         if request.new_input and len(request.new_input) > 10:
             extracted_data["description"] = request.new_input
-            
-        ai_message = "Thanks for the description! Let me get a few more details about your property."
     
-    # If this is a field update, we might need to adjust next fields
-    elif request.input_type == 'field_update':
-        # Field was already updated in current_data, just get next fields
-        ai_message = "Great! I've updated your listing with that information."
+    # Use orchestrator to determine next fields (after processing input)
+    next_fields = orchestrator.get_next_fields(extracted_data)
+    
+    # If we detected a property type from an image and property_type field is shown,
+    # set it as the default value so user can confirm/modify
+    if detected_property_type:
+        for field in next_fields:
+            if field.id == "property_type":
+                field.default = detected_property_type
+                break
+    
+    # Generate AI message if not already set (e.g., from image analysis)
+    if ai_message is None:
+        ai_message = orchestrator.generate_ai_message(extracted_data, next_fields)
+    
+    completion_percentage = orchestrator.calculate_completion_percentage(extracted_data)
     
     return AnalyzeStepResponse(
         extracted_data=extracted_data,
