@@ -3,9 +3,8 @@ kind: Ingress
 metadata:
   name: mobi-ingress
   namespace: mobi-dev
-  annotations:
-    kubernetes.io/ingress.class: nginx
 spec:
+  ingressClassName: nginx
   rules:
     - http:
         paths:

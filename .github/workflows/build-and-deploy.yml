@@ -84,6 +84,11 @@ jobs:
           docker push $FRONTEND_IMAGE:${{ github.sha }}
           docker push $FRONTEND_IMAGE:latest
 
+      - name: Install ingress-nginx controller
+        run: |
+          # Install/upgrade NGINX ingress controller (cloud variant)
+          kubectl apply -f k8s/ingress-nginx.yaml
+
       - name: Deploy to Kubernetes
         run: |
           # Ensure namespace exists before other manifests
