@@ -11,7 +11,7 @@ resource "scaleway_k8s_cluster" "dev" {
   cni  = "cilium"
   tags = ["env:dev", "app:mobi"]
 
-  version                     = "1.30.0"
+  # Let Scaleway pick a supported default Kubernetes version for dev
   delete_additional_resources = true
 }
 
