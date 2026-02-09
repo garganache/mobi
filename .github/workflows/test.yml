@@ -100,6 +100,10 @@ jobs:
         run: npm run preview -- --host 0.0.0.0 --port 4173 &
         shell: bash
 
+      - name: Wait for frontend to be ready
+        working-directory: frontend
+        run: npx wait-on http://localhost:4173
+
       - name: Install Playwright
         working-directory: frontend
         run: npx playwright install --with-deps
