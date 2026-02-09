@@ -13,7 +13,7 @@ Sub-Agent Rules
 - ALWAYS read this file first ( cat CONTRIBUTING.md)
 - ALWAYS read .tracker/WORKFLOW.md - the task lifecycle steps are mandatory
 - ALWAYS check existing code patterns before writing new code
-- NEVER assume a library/comopnent exists - verify with `ls` or `grep`
+- NEVER assume a library/component exists - verify with `ls` or `grep`
 - NEVER Use placeholder implementation unless explicitly told to
 - After writing files , verify they exist : `ls -la <path>`
 - After writing code, verify it compiles: run the relevant buil/int command
