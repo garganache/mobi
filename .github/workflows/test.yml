@@ -56,10 +56,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U mobi -d mobi" \
-          --health-interval 10s \
-          --health-timeout 5s \
-          --health-retries 5
+          --health-cmd="pg_isready -U mobi -d mobi" --health-interval=10s --health-timeout=5s --health-retries=5
     env:
       DATABASE_URL: postgresql+psycopg://mobi:mobi@localhost:5432/mobi
       E2E_BASE_URL: http://localhost:4173
