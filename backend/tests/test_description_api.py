@@ -12,7 +12,21 @@ client = TestClient(app)
 
 def setup_module(module):  # type: ignore[override]
     # Recreate DB for a clean slate
-    init_db()
+    from app.main import Base, engine, SessionLocal
+    
+    # Drop all tables and recreate for clean slate
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    
+    # Clear any existing data
+    db = SessionLocal()
+    try:
+        from app.main import Description, ImageAnalysis
+        db.query(Description).delete()
+        db.query(ImageAnalysis).delete()
+        db.commit()
+    finally:
+        db.close()
 
 
 def test_create_description_and_get_latest():

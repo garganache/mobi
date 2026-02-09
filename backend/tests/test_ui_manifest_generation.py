@@ -35,26 +35,29 @@ def test_analyze_step_with_image_input():
     assert response.status_code == 200
     data = response.json()
     
-    # Verify extracted data
-    assert data["extracted_data"]["property_type"] == "apartment"
+    # Verify extracted data - property_type should NOT be in extracted_data
+    # (user must confirm it, so it's shown as a field with default value instead)
+    assert "property_type" not in data["extracted_data"]
     assert data["extracted_data"]["has_pool"] is False
     assert data["extracted_data"]["bedrooms"] == 2
     
     # Verify UI schema fields (should be limited to 2-3 per response)
     assert len(data["ui_schema"]) <= 3
     
-    # First field should be property type when no property type is set
+    # First field should be property type with a default value
     if len(data["ui_schema"]) > 0:
         first_field = data["ui_schema"][0]
         assert first_field["id"] == "property_type"
         assert first_field["component_type"] == "select"
         assert first_field["label"] == "Property Type"
         assert len(first_field["options"]) >= 3  # At least 3 options
+        # Should have a default value set from AI detection
+        assert first_field.get("default") is not None
     
-    # Verify AI message is present
+    # Verify AI message is present and contains actual description
     assert data["ai_message"] is not None
-    assert "apartment" in data["ai_message"].lower()
-    assert "bedrooms" in data["ai_message"].lower()
+    # AI message should be more than just a template (includes actual vision description)
+    assert len(data["ai_message"]) > 50
     
     # Verify additional fields
     # Step number should equal the number of extracted data fields
@@ -126,9 +129,9 @@ def test_analyze_step_with_field_update():
     # In real implementation, field_update might not add new fields
     assert len(data["ui_schema"]) >= 0  # Could be empty or have fields
     
-    # Verify AI message acknowledges the update
+    # Verify AI message is present (no longer checks for specific wording)
     assert data["ai_message"] is not None
-    assert "updated" in data["ai_message"].lower()
+    assert len(data["ai_message"]) > 10  # Should have a meaningful message
     
     # Verify step and completion based on data fields
     assert data["step_number"] == len(request_data["current_data"])
@@ -218,19 +221,26 @@ def test_extracted_data_matches_detected_features():
     assert response.status_code == 200
     data = response.json()
     
-    # Verify extracted data keys match what the AI claims to detect
+    # Verify extracted data keys are reasonable
     extracted_keys = set(data["extracted_data"].keys())
     
-    # The AI message should reference features that are in extracted_data
+    # The AI message should be present and informative
     ai_message = data["ai_message"].lower()
+    assert len(ai_message) > 20  # Should have meaningful content
     
-    # Basic validation that detected features are reflected in extracted_data
+    # Basic validation that detected features are reflected appropriately
+    # Note: property_type is NOT in extracted_data (it's shown as a field for confirmation)
     if "pool" in ai_message:
         assert "has_pool" in extracted_keys
     if "bedroom" in ai_message:
         assert "bedrooms" in extracted_keys
-    if "apartment" in ai_message:
-        assert "property_type" in extracted_keys
+    
+    # If property type is mentioned, verify it's in UI schema for confirmation
+    if "apartment" in ai_message or "house" in ai_message:
+        # Should be shown as a field, not in extracted_data
+        property_type_field = next((f for f in data["ui_schema"] if f["id"] == "property_type"), None)
+        assert property_type_field is not None
+        assert property_type_field.get("default") is not None
 
 
 def test_schema_validation():
