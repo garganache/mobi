@@ -95,6 +95,10 @@ jobs:
           # Delete existing app ingresses to avoid host/path conflicts on re-apply
           kubectl -n mobi-dev delete ingress mobi-ingress mobi-backend-ingress mobi-frontend-ingress --ignore-not-found=true
 
+      - name: Ensure namespace exists
+        run: |
+          kubectl apply -f k8s/namespace.yaml
+
       - name: Ensure backend DB secret exists
         run: |
           # Create or update the mobi-backend-db secret with the DATABASE_URL
@@ -104,9 +108,6 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-          # Ensure namespace exists before other manifests
-          kubectl apply -f k8s/namespace.yaml
-
           # Apply core app manifests (deployments, services, ingresses)
           kubectl apply -f k8s/backend.yaml -f k8s/frontend.yaml -f k8s/ingress.yaml
 
