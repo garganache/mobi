@@ -58,13 +58,7 @@ jobs:
 
       - name: Install Scaleway CLI
         run: |
-          OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-          ARCH=$(uname -m)
-          URL="https://github.com/scaleway/scaleway-cli/releases/latest/download/scw-${OS}-${ARCH}"
-          echo "Downloading Scaleway CLI from $URL"
-          curl -sL "$URL" -o scw
-          sudo mv scw /usr/local/bin/scw
-          sudo chmod +x /usr/local/bin/scw
+          curl -s https://raw.githubusercontent.com/scaleway/scaleway-cli/master/scripts/get.sh | sudo sh
           scw version
 
       - name: Configure Scaleway CLI profile
