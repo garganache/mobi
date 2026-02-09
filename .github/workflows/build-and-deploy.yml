@@ -70,18 +70,22 @@ jobs:
       - name: Build backend image
         run: |
           docker build -t $BACKEND_IMAGE:${{ github.sha }} backend
+          docker tag $BACKEND_IMAGE:${{ github.sha }} $BACKEND_IMAGE:latest
 
       - name: Build frontend image
         run: |
           docker build -t $FRONTEND_IMAGE:${{ github.sha }} frontend
+          docker tag $FRONTEND_IMAGE:${{ github.sha }} $FRONTEND_IMAGE:latest
 
       - name: Push backend image
         run: |
           docker push $BACKEND_IMAGE:${{ github.sha }}
+          docker push $BACKEND_IMAGE:latest
 
       - name: Push frontend image
         run: |
           docker push $FRONTEND_IMAGE:${{ github.sha }}
+          docker push $FRONTEND_IMAGE:latest
 
       - name: Deploy to Kubernetes
         run: |
