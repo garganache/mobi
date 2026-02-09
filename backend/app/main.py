@@ -279,12 +279,18 @@ def analyze_step(request: AnalyzeStepRequest, db: Session = Depends(get_db)):
                 # Default amenities if not detected
                 extracted_data["has_pool"] = False
             
-            # Generate AI message based on what was detected
-            bedrooms_count = extracted_data.get('bedrooms', 2)
-            if detected_property_type == "apartment":
-                ai_message = f"I see what looks like an apartment with {bedrooms_count} bedrooms. Please confirm the property type below."
+            # Generate AI message from the vision analysis description
+            description = vision_result.get("description", "")
+            if description:
+                # Use the AI's actual description
+                ai_message = f"{description}\n\nPlease confirm the property type below and continue with additional details."
             else:
-                ai_message = f"I see what looks like a {detected_property_type} with {bedrooms_count} bedrooms. Please confirm the property type below."
+                # Fallback message if no description
+                bedrooms_count = extracted_data.get('bedrooms', 2)
+                if detected_property_type == "apartment":
+                    ai_message = f"I see what looks like an apartment with {bedrooms_count} bedrooms. Please confirm the property type below."
+                else:
+                    ai_message = f"I see what looks like a {detected_property_type} with {bedrooms_count} bedrooms. Please confirm the property type below."
                 
         except Exception as e:
             logger.error(f"Vision model analysis failed: {e}")
