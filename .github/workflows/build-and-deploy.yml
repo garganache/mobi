@@ -11,13 +11,9 @@ jobs:
       REGISTRY: rg.pl-waw.scw.cloud/garganache
       BACKEND_IMAGE: rg.pl-waw.scw.cloud/garganache/mobi-backend
       FRONTEND_IMAGE: rg.pl-waw.scw.cloud/garganache/mobi-frontend
+      SCW_K8S_CLUSTER_ID: ${{ secrets.SCW_K8S_CLUSTER_ID }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.9.8
 
       - name: Configure Scaleway env
         env:
@@ -27,34 +23,6 @@ jobs:
           SCW_DEFAULT_REGION: ${{ secrets.SCW_DEFAULT_REGION }}
         run: |
           echo "Scaleway env configured"
-
-      - name: Terraform init (dev)
-        working-directory: infra/terraform/envs/dev
-        env:
-          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
-          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
-          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
-          SCW_DEFAULT_REGION: ${{ secrets.SCW_DEFAULT_REGION }}
-          TF_VAR_scw_access_key: ${{ secrets.SCW_ACCESS_KEY }}
-          TF_VAR_scw_secret_key: ${{ secrets.SCW_SECRET_KEY }}
-          TF_VAR_scw_project_id: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
-          TF_VAR_scw_region: ${{ secrets.SCW_DEFAULT_REGION }}
-        run: |
-          terraform init -input=false
-
-      - name: Capture K8s cluster id
-        working-directory: infra/terraform/envs/dev
-        env:
-          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
-          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
-          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
-          SCW_DEFAULT_REGION: ${{ secrets.SCW_DEFAULT_REGION }}
-          TF_VAR_scw_access_key: ${{ secrets.SCW_ACCESS_KEY }}
-          TF_VAR_scw_secret_key: ${{ secrets.SCW_SECRET_KEY }}
-          TF_VAR_scw_project_id: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
-          TF_VAR_scw_region: ${{ secrets.SCW_DEFAULT_REGION }}
-        run: |
-          terraform output -raw k8s_cluster_id > $GITHUB_WORKSPACE/k8s_cluster_id
 
       - name: Install Scaleway CLI
         run: |
@@ -82,7 +50,7 @@ jobs:
         env:
           SCW_DEFAULT_REGION: ${{ secrets.SCW_DEFAULT_REGION }}
         run: |
-          CLUSTER_ID=$(cat k8s_cluster_id)
+          CLUSTER_ID="$SCW_K8S_CLUSTER_ID"
           # Newer scw CLI prints kubeconfig to stdout by default
           scw k8s kubeconfig install "$CLUSTER_ID" > kubeconfig
           mkdir -p ~/.kube
