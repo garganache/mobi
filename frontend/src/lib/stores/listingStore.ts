@@ -89,8 +89,10 @@ function createListingStore() {
      */
     initField: (fieldId: string, defaultValue: FieldValue = null) => {
       update(state => {
-        // Don't overwrite existing state
-        if (state[fieldId]) return state;
+        // Don't overwrite existing valid state
+        if (state[fieldId] && typeof state[fieldId] === 'object' && 'value' in state[fieldId]) {
+          return state;
+        }
         
         return {
           ...state,
@@ -133,7 +135,7 @@ function createListingStore() {
       const result: Record<string, FieldValue> = {};
       
       for (const [fieldId, fieldState] of Object.entries(state)) {
-        result[fieldId] = fieldState.value;
+        result[fieldId] = fieldState?.value ?? null;
       }
       
       return result;
@@ -151,7 +153,7 @@ export const listingValues = derived(
   ($state) => {
     const result: Record<string, FieldValue> = {};
     for (const [fieldId, fieldState] of Object.entries($state)) {
-      result[fieldId] = fieldState.value;
+      result[fieldId] = fieldState?.value ?? null;
     }
     return result;
   }
@@ -165,7 +167,7 @@ export const aiSuggestions = derived(
   ($state) => {
     const result: Record<string, FieldValue> = {};
     for (const [fieldId, fieldState] of Object.entries($state)) {
-      if (fieldState.aiSuggested !== undefined && 
+      if (fieldState?.aiSuggested !== undefined && 
           fieldState.aiSuggested !== fieldState.value) {
         result[fieldId] = fieldState.aiSuggested;
       }
