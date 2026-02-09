@@ -48,13 +48,10 @@ jobs:
 
       - name: Install kubeconfig for cluster
         env:
-          SCW_DEFAULT_REGION: ${{ secrets.SCW_DEFAULT_REGION }}
+          SCW_KUBECONFIG_B64: ${{ secrets.SCW_KUBECONFIG_B64 }}
         run: |
-          CLUSTER_ID="$SCW_K8S_CLUSTER_ID"
-          # Newer scw CLI prints kubeconfig to stdout by default
-          scw k8s kubeconfig install "$CLUSTER_ID" > kubeconfig
           mkdir -p ~/.kube
-          mv kubeconfig ~/.kube/config
+          echo "$SCW_KUBECONFIG_B64" | base64 -d > ~/.kube/config
 
       - name: Install kubectl
         run: |
