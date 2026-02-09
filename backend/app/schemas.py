@@ -132,3 +132,7 @@ class AnalyzeStepResponse(UIManifest):
         None,
         description="Estimated completion percentage (0-100)"
     )
+    vision_analysis: Optional[dict[str, Any]] = Field(
+        None,
+        description="Full AI analysis result from image processing (includes description, detected features, condition)"
+    )

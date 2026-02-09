@@ -383,26 +383,31 @@ def preprocess_image(image_data: bytes, max_size: int = 1024, quality: int = 85)
 
 # Default prompt for property analysis
 DEFAULT_PROPERTY_PROMPT = """
+You are analyzing property images for a home buyer who is evaluating potential properties to purchase.
+This analysis will help them understand the property features, condition, and amenities to make an informed buying decision.
+
 Analyze this property image and provide a structured response with the following information:
 
-1. **description**: A brief description of what you see in the image
-2. **property_type**: The type of property (apartment, house, townhouse, etc.)
-3. **rooms**: Count of different room types visible (bedroom, bathroom, kitchen, etc.)
-4. **amenities**: List of amenities and features visible (pool, fireplace, balcony, etc.)
-5. **style**: Architectural style (modern, traditional, rustic, etc.)
-6. **materials**: Building materials visible (hardwood_floors, granite_counters, etc.)
+1. **description**: A detailed description of what you see in the image (2-3 sentences, highlighting key features that would matter to a buyer)
+2. **property_type**: The type of property (apartment, house, townhouse, condo, etc.)
+3. **rooms**: Count of different room types visible (bedroom, bathroom, kitchen, living_room, dining_room, etc.)
+4. **amenities**: List of amenities and features visible (pool, fireplace, balcony, garage, dishwasher, etc.)
+5. **style**: Architectural style (modern, traditional, rustic, contemporary, etc.)
+6. **materials**: Building materials and finishes visible (hardwood_floors, granite_counters, tile, carpet, etc.)
+7. **condition**: Overall condition impression (excellent, good, fair, needs_work)
 
 Please respond in JSON format like this example:
 {
-  "description": "A modern kitchen with granite countertops and stainless steel appliances",
+  "description": "A modern kitchen with granite countertops and stainless steel appliances. The space features ample cabinet storage and appears well-maintained. Natural lighting from a large window creates a bright atmosphere.",
   "property_type": "apartment",
   "rooms": {"kitchen": 1},
-  "amenities": ["granite_counters", "stainless_steel", "dishwasher"],
+  "amenities": ["granite_counters", "stainless_steel", "dishwasher", "large_window"],
   "style": "modern",
-  "materials": ["granite_counters", "stainless_steel"]
+  "materials": ["granite_counters", "stainless_steel", "tile_backsplash"],
+  "condition": "excellent"
 }
 
-Be specific and accurate based only on what you can see in the image.
+Be specific and accurate based only on what you can see in the image. Focus on details that would be important to a potential buyer.
 """
 
 
