@@ -1,0 +1,51 @@
+{
+  "project": {
+    "name": "mobi",
+    "description": "Platform for extracting information from house/apartment selling ads",
+    "vision": "Ability to extract as much data as possible such that the users know what they are buying",
+    "created": "2026-02-09",
+    "updated": "2026-02-09"
+  },
+  "epics": [
+    {
+      "id": "EPIC-001",
+      "name": "AI-Guided Adaptive Listing Interface",
+      "description": "Create an intelligent, progressive disclosure interface where users can add property listings with AI assistance that guides them through filling out relevant fields based on uploaded images and provided data",
+      "priority": "high",
+      "status": "todo",
+      "stories": ["STORY-002", "STORY-003", "STORY-004", "STORY-005"]
+    }
+  ],
+  "stories": [
+    {
+      "id": "STORY-001",
+      "title": "Example story",
+      "status": "done",
+      "epic": null
+    },
+    {
+      "id": "STORY-002",
+      "title": "Dynamic Form Infrastructure (Svelte)",
+      "status": "todo",
+      "epic": "EPIC-001"
+    },
+    {
+      "id": "STORY-003",
+      "title": "FastAPI Orchestrator Endpoint",
+      "status": "todo",
+      "epic": "EPIC-001"
+    },
+    {
+      "id": "STORY-004",
+      "title": "AI Analysis & Field Suggestion Logic",
+      "status": "todo",
+      "epic": "EPIC-001"
+    },
+    {
+      "id": "STORY-005",
+      "title": "AI-Guided User Journey Integration",
+      "status": "todo",
+      "epic": "EPIC-001"
+    }
+  ]
+}
