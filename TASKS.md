@@ -4,3 +4,4 @@
 - [ ] Deploy mobi-dev to Kapsule via CI and verify access via external IP (Finch, 2026-02-09)
 - [ ] Wire GitHub Actions status reporting (webhook/API) into Finch/OpenClaw so runs can be monitored automatically (Finch, 2026-02-09)
 - [x] Create local GitHub Actions status checker script (Finch, 2026-02-09)
+- [x] Document current mobi infra/CI/K8s setup in assistant memory (Finch, 2026-02-09)

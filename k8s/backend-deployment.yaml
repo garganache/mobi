@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mobi-backend
+  namespace: mobi-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mobi-backend
+  template:
+    metadata:
+      labels:
+        app: mobi-backend
+    spec:
+      containers:
+        - name: mobi-backend
+          image: rg.pl-waw.scw.cloud/garganache/mobi-backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              value: "sqlite:///./dev.db"

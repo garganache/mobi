@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mobi-frontend
+  namespace: mobi-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mobi-frontend
+  template:
+    metadata:
+      labels:
+        app: mobi-frontend
+    spec:
+      containers:
+        - name: mobi-frontend
+          image: rg.pl-waw.scw.cloud/garganache/mobi-frontend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
