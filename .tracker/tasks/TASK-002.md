@@ -1,7 +1,7 @@
 # TASK-002: Create component registry mapping field types to Svelte components
 
 **Story:** STORY-002
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Estimated:** 1h
 
@@ -18,7 +18,7 @@ Create a component registry system that maps field type strings (e.g., 'text', '
 
 ## Definition of Done
 
-- [ ] Component registry file created (e.g., `lib/components/fields/registry.ts`)
-- [ ] At least 4 field types mapped
-- [ ] Registry is importable and usable in parent components
-- [ ] Documentation added explaining how to add new field types
+- [x] Component registry file created (e.g., `lib/components/fields/registry.ts`)
+- [x] At least 4 field types mapped
+- [x] Registry is importable and usable in parent components
+- [x] Documentation added explaining how to add new field types

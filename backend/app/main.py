@@ -2,10 +2,18 @@ from datetime import datetime
 from typing import Optional
 
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy import Column, DateTime, Integer, Text, create_engine
 from sqlalchemy.orm import declarative_base, Session, sessionmaker
 import os
+
+from app.schemas import (
+    AnalyzeStepRequest,
+    AnalyzeStepResponse,
+    UIField,
+    FieldOption,
+)
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
@@ -52,6 +60,15 @@ def get_db():
 
 app = FastAPI(title="Mobi Backend")
 
+# Configure CORS for local development
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace with specific origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.on_event("startup")
 def on_startup() -> None:
@@ -90,3 +107,105 @@ def list_descriptions(limit: int = 10, db: Session = Depends(get_db)):
     """Return the most recent descriptions, newest first."""
     q = db.query(Description).order_by(Description.created_at.desc()).limit(limit)
     return q.all()
+
+
+@app.post("/analyze-step", response_model=AnalyzeStepResponse)
+def analyze_step(request: AnalyzeStepRequest):
+    """
+    Core orchestrator endpoint for AI-guided listing creation.
+    
+    Accepts the current form state and new input (image, text, or field update),
+    then returns a UI manifest telling the frontend what to display next.
+    
+    ## Request Body
+    - `current_data`: Dictionary of current form values (field_id: value)
+    - `new_input`: Optional new input (base64 image or text)
+    - `input_type`: Type of input ('image', 'text', or 'field_update')
+    - `image_url`: Optional URL to an uploaded image
+    
+    ## Response
+    Returns a UI Manifest containing:
+    - `extracted_data`: Data extracted/inferred by AI
+    - `ui_schema`: Array of field definitions to render
+    - `ai_message`: Conversational guidance for the user
+    - `step_number`: Current step in the flow
+    - `completion_percentage`: Estimated progress
+    
+    ## Current Implementation
+    This is a stub implementation that returns mock data for testing.
+    Real AI analysis logic will be added in subsequent tasks.
+    """
+    
+    # TODO: Implement real AI analysis logic (TASK-008+)
+    # For now, return mock data based on input type
+    
+    if request.input_type == 'image':
+        # Mock response for image input
+        return AnalyzeStepResponse(
+            extracted_data={
+                "property_type": "apartment",
+                "has_pool": False,
+                "bedrooms": 2,
+            },
+            ui_schema=[
+                UIField(
+                    id="property_type",
+                    component_type="select",
+                    label="Property Type",
+                    placeholder="Select type",
+                    options=[
+                        FieldOption(value="apartment", label="Apartment"),
+                        FieldOption(value="house", label="House"),
+                        FieldOption(value="condo", label="Condo"),
+                    ],
+                    required=True,
+                ),
+                UIField(
+                    id="bedrooms",
+                    component_type="number",
+                    label="Number of Bedrooms",
+                    min=0,
+                    max=20,
+                    default=2,
+                ),
+            ],
+            ai_message="I see a modern apartment with what looks like 2 bedrooms. Is this correct?",
+            step_number=1,
+            completion_percentage=15.0,
+        )
+    
+    elif request.input_type == 'text':
+        # Mock response for text input
+        return AnalyzeStepResponse(
+            extracted_data={
+                **request.current_data,
+                "description": request.new_input,
+            },
+            ui_schema=[
+                UIField(
+                    id="bathrooms",
+                    component_type="number",
+                    label="Number of Bathrooms",
+                    min=0,
+                    max=10,
+                ),
+                UIField(
+                    id="has_parking",
+                    component_type="toggle",
+                    label="Has Parking",
+                ),
+            ],
+            ai_message="Thanks for the description! Could you tell me about the bathrooms and parking?",
+            step_number=2,
+            completion_percentage=40.0,
+        )
+    
+    else:  # field_update
+        # Mock response for field update
+        return AnalyzeStepResponse(
+            extracted_data=request.current_data,
+            ui_schema=[],
+            ai_message="Great! I've updated the form with your information.",
+            step_number=len(request.current_data),
+            completion_percentage=min(100.0, len(request.current_data) * 10),
+        )

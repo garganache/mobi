@@ -1,7 +1,7 @@
 # TASK-007: Design and document UI manifest JSON schema
 
 **Story:** STORY-003
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Estimated:** 1h
 
@@ -32,9 +32,9 @@ Design the JSON schema for the "UI Manifest" that the backend returns to tell th
 
 ## Definition of Done
 
-- [ ] JSON schema structure documented
-- [ ] Field definitions for all properties explained
-- [ ] Example manifests created for different scenarios
-- [ ] Schema added to API documentation
-- [ ] Validation rules defined (e.g., required fields)
-- [ ] TypeScript types created (if using TypeScript)
+- [x] JSON schema structure documented
+- [x] Field definitions for all properties explained
+- [x] Example manifests created for different scenarios
+- [x] Schema added to API documentation
+- [x] Validation rules defined (e.g., required fields)
+- [x] TypeScript types created (if using TypeScript)

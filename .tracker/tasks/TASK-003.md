@@ -1,7 +1,7 @@
 # TASK-003: Build basic input components (TextInput, SelectInput, NumberInput)
 
 **Story:** STORY-002
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Estimated:** 3h
 
@@ -26,9 +26,9 @@ Create reusable Svelte input components that can accept dynamic props from the U
 
 ## Definition of Done
 
-- [ ] All 3 components created (4 if toggle included)
-- [ ] Components accept required props
-- [ ] Two-way binding works correctly
-- [ ] Components are styled consistently
-- [ ] Accessibility attributes present (labels, aria-labels)
-- [ ] Components tested manually in isolation
+- [x] All 3 components created (4 if toggle included)
+- [x] Components accept required props
+- [x] Two-way binding works correctly
+- [x] Components are styled consistently
+- [x] Accessibility attributes present (labels, aria-labels)
+- [x] Components tested manually in isolation
