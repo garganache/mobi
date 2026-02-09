@@ -4,6 +4,7 @@
   let text = '';
   let status: string | null = null;
   let loading = false;
+  let history: { id: number; text: string; created_at: string }[] = [];
 
   async function loadLatest() {
     try {
@@ -14,6 +15,17 @@
       }
     } catch (e) {
       console.error('Failed to load latest description', e);
+    }
+  }
+
+  async function loadHistory() {
+    try {
+      const res = await fetch('/api/description?limit=10');
+      if (res.ok) {
+        history = await res.json();
+      }
+    } catch (e) {
+      console.error('Failed to load description history', e);
     }
   }
 
@@ -28,6 +40,7 @@
       });
       if (res.ok) {
         status = 'Saved successfully';
+        await loadHistory();
       } else {
         const data = await res.json().catch(() => ({}));
         status = data.detail ?? 'Save failed';
@@ -41,6 +54,7 @@
 
   onMount(() => {
     loadLatest();
+    loadHistory();
   });
 </script>
 
@@ -66,5 +80,16 @@
 
   {#if status}
     <p data-testid="status">{status}</p>
+  {/if}
+
+  {#if history.length}
+    <section style="margin-top: 2rem;">
+      <h2>Recent descriptions</h2>
+      <ul>
+        {#each history as item}
+          <li>{item.text}</li>
+        {/each}
+      </ul>
+    </section>
   {/if}
 </main>

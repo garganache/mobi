@@ -81,3 +81,10 @@ def get_latest_description(db: Session = Depends(get_db)):
     if desc is None:
         raise HTTPException(status_code=404, detail="No description found")
     return desc
+
+
+@app.get("/description", response_model=list[DescriptionOut])
+def list_descriptions(limit: int = 10, db: Session = Depends(get_db)):
+    """Return the most recent descriptions, newest first."""
+    q = db.query(Description).order_by(Description.created_at.desc()).limit(limit)
+    return q.all()
