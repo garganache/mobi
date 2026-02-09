@@ -129,12 +129,8 @@
     }
   }
 
-  // Subscribe to form changes
-  listingStore.subscribe(() => {
-    if (formSchema.length > 0) {
-      handleFieldUpdate();
-    }
-  });
+  // Note: Removed auto-subscribe to prevent infinite loop.
+  // User triggers updates manually via "Continue" button.
 </script>
 
 <main>
