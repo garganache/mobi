@@ -18,7 +18,7 @@ class TestOrchestrationIntegration:
     
     def test_empty_form_returns_property_type_first(self, client):
         """Test that an empty form returns property_type as the first field."""
-        response = client.post("/analyze-step", json={
+        response = client.post("/api/analyze-step", json={
             "current_data": {},
             "input_type": "field_update"
         })
@@ -34,7 +34,7 @@ class TestOrchestrationIntegration:
     
     def test_apartment_property_type_returns_appropriate_fields(self, client):
         """Test that apartment property type returns relevant fields."""
-        response = client.post("/analyze-step", json={
+        response = client.post("/api/analyze-step", json={
             "current_data": {"property_type": "apartment"},
             "input_type": "field_update"
         })
@@ -52,7 +52,7 @@ class TestOrchestrationIntegration:
     
     def test_house_property_type_returns_appropriate_fields(self, client):
         """Test that house property type returns relevant fields."""
-        response = client.post("/analyze-step", json={
+        response = client.post("/api/analyze-step", json={
             "current_data": {"property_type": "house"},
             "input_type": "field_update"
         })
@@ -70,7 +70,7 @@ class TestOrchestrationIntegration:
     
     def test_condo_property_type_returns_appropriate_fields(self, client):
         """Test that condo property type returns relevant fields."""
-        response = client.post("/analyze-step", json={
+        response = client.post("/api/analyze-step", json={
             "current_data": {"property_type": "condo"},
             "input_type": "field_update"
         })
@@ -88,7 +88,7 @@ class TestOrchestrationIntegration:
     
     def test_filled_fields_are_not_returned(self, client):
         """Test that already filled fields are not returned in next step."""
-        response = client.post("/analyze-step", json={
+        response = client.post("/api/analyze-step", json={
             "current_data": {
                 "property_type": "apartment",
                 "bedrooms": 2,
@@ -114,7 +114,7 @@ class TestOrchestrationIntegration:
     
     def test_image_input_extracts_basic_data(self, client):
         """Test that image input extracts basic property information."""
-        response = client.post("/analyze-step", json={
+        response = client.post("/api/analyze-step", json={
             "current_data": {},
             "input_type": "image",
             "new_input": "base64_encoded_image_data_here"
@@ -132,7 +132,7 @@ class TestOrchestrationIntegration:
     
     def test_text_input_processes_description(self, client):
         """Test that text input processes description text."""
-        response = client.post("/analyze-step", json={
+        response = client.post("/api/analyze-step", json={
             "current_data": {},
             "input_type": "text",
             "new_input": "Beautiful 3-bedroom house with large backyard and modern kitchen"
@@ -150,7 +150,7 @@ class TestOrchestrationIntegration:
     
     def test_field_update_maintains_state(self, client):
         """Test that field update maintains current state correctly."""
-        response = client.post("/analyze-step", json={
+        response = client.post("/api/analyze-step", json={
             "current_data": {
                 "property_type": "house",
                 "bedrooms": 3
@@ -171,7 +171,7 @@ class TestOrchestrationIntegration:
     
     def test_max_fields_per_step_limit(self, client):
         """Test that we limit fields to maximum per step."""
-        response = client.post("/analyze-step", json={
+        response = client.post("/api/analyze-step", json={
             "current_data": {"property_type": "apartment"},
             "input_type": "field_update"
         })
@@ -185,7 +185,7 @@ class TestOrchestrationIntegration:
     def test_completion_percentage_calculation(self, client):
         """Test that completion percentage is calculated correctly."""
         # Test empty form
-        response = client.post("/analyze-step", json={
+        response = client.post("/api/analyze-step", json={
             "current_data": {},
             "input_type": "field_update"
         })
@@ -193,7 +193,7 @@ class TestOrchestrationIntegration:
         assert data["completion_percentage"] == 0.0
         
         # Test partial form
-        response = client.post("/analyze-step", json={
+        response = client.post("/api/analyze-step", json={
             "current_data": {
                 "property_type": "apartment",
                 "bedrooms": 2,
@@ -208,7 +208,7 @@ class TestOrchestrationIntegration:
     def test_ai_message_appropriateness(self, client):
         """Test that AI messages are appropriate for the context."""
         # Test initial state - should ask for property type
-        response = client.post("/analyze-step", json={
+        response = client.post("/api/analyze-step", json={
             "current_data": {},
             "input_type": "field_update"
         })

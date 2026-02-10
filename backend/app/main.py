@@ -120,7 +120,7 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.post("/description", response_model=DescriptionOut)
+@app.post("/api/description", response_model=DescriptionOut)
 def create_description(payload: DescriptionIn, db: Session = Depends(get_db)):
     text = payload.text.strip()
     if not text:
@@ -133,7 +133,7 @@ def create_description(payload: DescriptionIn, db: Session = Depends(get_db)):
     return desc
 
 
-@app.get("/description/latest", response_model=Optional[DescriptionOut])
+@app.get("/api/description/latest", response_model=Optional[DescriptionOut])
 def get_latest_description(db: Session = Depends(get_db)):
     desc = db.query(Description).order_by(Description.created_at.desc()).first()
     if desc is None:
@@ -141,21 +141,21 @@ def get_latest_description(db: Session = Depends(get_db)):
     return desc
 
 
-@app.get("/description", response_model=list[DescriptionOut])
+@app.get("/api/description", response_model=list[DescriptionOut])
 def list_descriptions(limit: int = 10, db: Session = Depends(get_db)):
     """Return the most recent descriptions, newest first."""
     q = db.query(Description).order_by(Description.created_at.desc()).limit(limit)
     return q.all()
 
 
-@app.get("/image-analyses", response_model=list[ImageAnalysisOut])
+@app.get("/api/image-analyses", response_model=list[ImageAnalysisOut])
 def list_image_analyses(limit: int = 10, db: Session = Depends(get_db)):
     """Return the most recent image analyses, newest first."""
     q = db.query(ImageAnalysis).order_by(ImageAnalysis.created_at.desc()).limit(limit)
     return q.all()
 
 
-@app.get("/image-analyses/{analysis_id}", response_model=ImageAnalysisOut)
+@app.get("/api/image-analyses/{analysis_id}", response_model=ImageAnalysisOut)
 def get_image_analysis(analysis_id: int, db: Session = Depends(get_db)):
     """Get a specific image analysis by ID."""
     analysis = db.query(ImageAnalysis).filter(ImageAnalysis.id == analysis_id).first()
@@ -164,7 +164,7 @@ def get_image_analysis(analysis_id: int, db: Session = Depends(get_db)):
     return analysis
 
 
-@app.post("/analyze-step", response_model=AnalyzeStepResponse)
+@app.post("/api/analyze-step", response_model=AnalyzeStepResponse)
 def analyze_step(request: AnalyzeStepRequest, db: Session = Depends(get_db)):
     """
     Core orchestrator endpoint for AI-guided listing creation.

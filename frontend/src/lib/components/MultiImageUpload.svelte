@@ -15,6 +15,7 @@
     isUploading: boolean;
     progress: number;
     error: string | null;
+    isComplete?: boolean;
   }
 
   let uploads: ImageUpload[] = [];
@@ -63,6 +64,10 @@
       error = `Maximum ${maxImages} images allowed. You can add ${maxImages - uploads.length} more.`;
       return;
     }
+    
+    // Clear any existing completed uploads before adding new ones
+    // This prevents accumulation of old completed uploads
+    uploads = uploads.filter(u => !u.isComplete);
     
     // Create upload entries
     const newUploads: ImageUpload[] = validFiles.map(file => ({
@@ -127,17 +132,16 @@
       uploads = uploads.map(u => ({
         ...u,
         isUploading: false,
-        progress: 100
+        progress: 100,
+        isComplete: true
       }));
       
       // Store synthesis result
       synthesis = result.synthesis;
       
-      // Show success indicator for 3 seconds, then optionally clear uploads
+      // Clear uploads after successful analysis (auto-clear option)
       setTimeout(() => {
-        // Option to clear uploads after successful analysis
-        // Uncomment the next line if you want to auto-clear uploads after success
-        // clearUploadsAfterSuccess();
+        clearAll();
       }, 3000);
       
       // Dispatch completion event
@@ -306,6 +310,15 @@
                       <div class="progress-fill" style="width: {upload.progress}%"></div>
                     </div>
                     <p>Analyzing...</p>
+                  </div>
+                </div>
+              {:else if upload.isComplete}
+                <div class="upload-overlay complete" in:fade={{ duration: 200 }}>
+                  <div class="complete-indicator">
+                    <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <p>Analysis Complete</p>
                   </div>
                 </div>
               {/if}
@@ -575,8 +588,20 @@
     color: white;
   }
 
-  .upload-progress {
+  .upload-overlay.complete {
+    background: rgba(34, 197, 94, 0.9);
+  }
+
+  .complete-indicator {
     text-align: center;
+    color: white;
+  }
+
+  .check-icon {
+    width: 3rem;
+    height: 3rem;
+    margin: 0 auto 0.5rem;
+    stroke-width: 2;
   }
 
   .progress-bar {

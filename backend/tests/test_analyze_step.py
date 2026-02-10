@@ -47,25 +47,25 @@ def valid_field_update_request() -> Dict[str, Any]:
 
 def test_analyze_step_image_input_returns_200(valid_image_request):
     """Test that endpoint returns 200 for valid image input request."""
-    response = client.post("/analyze-step", json=valid_image_request)
+    response = client.post("/api/analyze-step", json=valid_image_request)
     assert response.status_code == 200
 
 
 def test_analyze_step_text_input_returns_200(valid_text_request):
     """Test that endpoint returns 200 for valid text input request."""
-    response = client.post("/analyze-step", json=valid_text_request)
+    response = client.post("/api/analyze-step", json=valid_text_request)
     assert response.status_code == 200
 
 
 def test_analyze_step_field_update_returns_200(valid_field_update_request):
     """Test that endpoint returns 200 for valid field update request."""
-    response = client.post("/analyze-step", json=valid_field_update_request)
+    response = client.post("/api/analyze-step", json=valid_field_update_request)
     assert response.status_code == 200
 
 
 def test_response_matches_ui_manifest_schema(valid_image_request):
     """Test that response matches UI Manifest schema."""
-    response = client.post("/analyze-step", json=valid_image_request)
+    response = client.post("/api/analyze-step", json=valid_image_request)
     assert response.status_code == 200
     
     data = response.json()
@@ -87,7 +87,7 @@ def test_response_matches_ui_manifest_schema(valid_image_request):
 
 def test_image_input_response_structure(valid_image_request):
     """Test specific response structure for image input."""
-    response = client.post("/analyze-step", json=valid_image_request)
+    response = client.post("/api/analyze-step", json=valid_image_request)
     data = response.json()
     
     # Should NOT auto-fill property_type in extracted_data (requires user confirmation)
@@ -106,7 +106,7 @@ def test_image_upload_requires_property_type_confirmation(valid_image_request):
     Regression test for bug where user could skip property type selection.
     After image upload, property_type should be shown as a field with AI-detected default.
     """
-    response = client.post("/analyze-step", json=valid_image_request)
+    response = client.post("/api/analyze-step", json=valid_image_request)
     data = response.json()
     
     # property_type should NOT be in extracted_data (not confirmed yet)
@@ -137,7 +137,7 @@ def test_image_upload_requires_property_type_confirmation(valid_image_request):
 
 def test_text_input_response_structure(valid_text_request):
     """Test specific response structure for text input."""
-    response = client.post("/analyze-step", json=valid_text_request)
+    response = client.post("/api/analyze-step", json=valid_text_request)
     data = response.json()
     
     # Should preserve existing data and add new input
@@ -149,7 +149,7 @@ def test_text_input_response_structure(valid_text_request):
 
 def test_field_update_response_structure(valid_field_update_request):
     """Test specific response structure for field update."""
-    response = client.post("/analyze-step", json=valid_field_update_request)
+    response = client.post("/api/analyze-step", json=valid_field_update_request)
     data = response.json()
     
     # Should preserve current data
@@ -163,7 +163,7 @@ def test_handles_missing_current_data():
         "new_input": "test input",
         "input_type": "text"
     }
-    response = client.post("/analyze-step", json=request_data)
+    response = client.post("/api/analyze-step", json=request_data)
     assert response.status_code == 200
     
     data = response.json()
@@ -178,7 +178,7 @@ def test_handles_missing_new_input():
         "current_data": {"test": "data"},
         "input_type": "field_update"
     }
-    response = client.post("/analyze-step", json=request_data)
+    response = client.post("/api/analyze-step", json=request_data)
     assert response.status_code == 200
     
     data = response.json()
@@ -191,7 +191,7 @@ def test_validates_input_type_required():
         "current_data": {},
         "new_input": "test"
     }
-    response = client.post("/analyze-step", json=request_data)
+    response = client.post("/api/analyze-step", json=request_data)
     assert response.status_code == 422  # FastAPI validation error
 
 
@@ -202,13 +202,13 @@ def test_validates_input_type_invalid():
         "new_input": "test",
         "input_type": "invalid_type"
     }
-    response = client.post("/analyze-step", json=request_data)
+    response = client.post("/api/analyze-step", json=request_data)
     assert response.status_code == 422  # FastAPI validation error
 
 
 def test_ui_schema_field_validation():
     """Test that UI schema fields are properly structured."""
-    response = client.post("/analyze-step", json={
+    response = client.post("/api/analyze-step", json={
         "current_data": {},
         "input_type": "image"
     })
@@ -225,7 +225,7 @@ def test_ui_schema_field_validation():
 
 def test_cors_headers_present():
     """Test that CORS headers are present in response."""
-    response = client.post("/analyze-step", json={
+    response = client.post("/api/analyze-step", json={
         "current_data": {},
         "input_type": "image"
     })
@@ -237,14 +237,14 @@ def test_cors_headers_present():
 
 def test_empty_request_validation():
     """Test that completely empty request is properly rejected."""
-    response = client.post("/analyze-step", json={})
+    response = client.post("/api/analyze-step", json={})
     assert response.status_code == 422
 
 
 def test_completion_percentage_bounds():
     """Test that completion percentage stays within valid bounds."""
     # Test with many fields
-    response = client.post("/analyze-step", json={
+    response = client.post("/api/analyze-step", json={
         "current_data": {f"field_{i}": f"value_{i}" for i in range(20)},  # 20 fields
         "input_type": "field_update"
     })
@@ -255,7 +255,7 @@ def test_completion_percentage_bounds():
 def test_step_number_calculation():
     """Test that step number is calculated correctly."""
     # Test with field update
-    response = client.post("/analyze-step", json={
+    response = client.post("/api/analyze-step", json={
         "current_data": {"field1": "value1", "field2": "value2"},
         "input_type": "field_update"
     })
@@ -268,7 +268,7 @@ def test_response_consistency():
     input_types = ["image", "text", "field_update"]
     
     for input_type in input_types:
-        response = client.post("/analyze-step", json={
+        response = client.post("/api/analyze-step", json={
             "current_data": {},
             "input_type": input_type
         })
@@ -284,7 +284,7 @@ def test_response_consistency():
 
 def test_field_options_structure():
     """Test that select field options are properly structured."""
-    response = client.post("/analyze-step", json={
+    response = client.post("/api/analyze-step", json={
         "current_data": {},
         "input_type": "image"
     })
@@ -302,7 +302,7 @@ def test_field_options_structure():
 
 def test_number_field_constraints():
     """Test that number fields have proper constraints."""
-    response = client.post("/analyze-step", json={
+    response = client.post("/api/analyze-step", json={
         "current_data": {},
         "input_type": "image"
     })
@@ -320,7 +320,7 @@ def test_number_field_constraints():
 
 def test_optional_fields_handling():
     """Test that optional fields are properly handled."""
-    response = client.post("/analyze-step", json={
+    response = client.post("/api/analyze-step", json={
         "current_data": {},
         "new_input": "test",
         "input_type": "text"

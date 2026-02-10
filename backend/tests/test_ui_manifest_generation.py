@@ -30,7 +30,7 @@ def test_analyze_step_with_image_input():
         "input_type": "image"
     }
     
-    response = client.post("/analyze-step", json=request_data)
+    response = client.post("/api/analyze-step", json=request_data)
     
     assert response.status_code == 200
     data = response.json()
@@ -75,7 +75,7 @@ def test_analyze_step_with_text_input():
         "input_type": "text"
     }
     
-    response = client.post("/analyze-step", json=request_data)
+    response = client.post("/api/analyze-step", json=request_data)
     
     assert response.status_code == 200
     data = response.json()
@@ -117,7 +117,7 @@ def test_analyze_step_with_field_update():
         "input_type": "field_update"
     }
     
-    response = client.post("/analyze-step", json=request_data)
+    response = client.post("/api/analyze-step", json=request_data)
     
     assert response.status_code == 200
     data = response.json()
@@ -147,7 +147,7 @@ def test_house_property_type_schema():
         "input_type": "text"
     }
     
-    response = client.post("/analyze-step", json=request_data)
+    response = client.post("/api/analyze-step", json=request_data)
     
     assert response.status_code == 200
     data = response.json()
@@ -171,7 +171,7 @@ def test_apartment_property_type_schema():
         "input_type": "text"
     }
     
-    response = client.post("/analyze-step", json=request_data)
+    response = client.post("/api/analyze-step", json=request_data)
     
     assert response.status_code == 200
     data = response.json()
@@ -192,7 +192,7 @@ def test_field_limit_enforcement():
         "input_type": "image"
     }
     
-    response = client.post("/analyze-step", json=request_data)
+    response = client.post("/api/analyze-step", json=request_data)
     
     assert response.status_code == 200
     data = response.json()
@@ -216,7 +216,7 @@ def test_extracted_data_matches_detected_features():
         "input_type": "image"
     }
     
-    response = client.post("/analyze-step", json=request_data)
+    response = client.post("/api/analyze-step", json=request_data)
     
     assert response.status_code == 200
     data = response.json()
@@ -251,7 +251,7 @@ def test_schema_validation():
         "input_type": "image"
     }
     
-    response = client.post("/analyze-step", json=request_data)
+    response = client.post("/api/analyze-step", json=request_data)
     
     assert response.status_code == 200
     data = response.json()
@@ -295,7 +295,7 @@ def test_ai_message_generation():
         "input_type": "image"
     }
     
-    response = client.post("/analyze-step", json=image_request)
+    response = client.post("/api/analyze-step", json=image_request)
     assert response.status_code == 200
     image_data = response.json()
     
@@ -309,7 +309,7 @@ def test_ai_message_generation():
         "input_type": "text"
     }
     
-    response = client.post("/analyze-step", json=text_request)
+    response = client.post("/api/analyze-step", json=text_request)
     assert response.status_code == 200
     text_data = response.json()
     
@@ -322,7 +322,7 @@ def test_ai_message_generation():
         "input_type": "field_update"
     }
     
-    response = client.post("/analyze-step", json=update_request)
+    response = client.post("/api/analyze-step", json=update_request)
     assert response.status_code == 200
     update_data = response.json()
     

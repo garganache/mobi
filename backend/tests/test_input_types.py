@@ -56,7 +56,7 @@ class TestImageInput:
         base64_image = create_base64_image()
         
         response = client.post(
-            "/analyze-step",
+            "/api/analyze-step",
             json={
                 "current_data": {},
                 "new_input": base64_image,
@@ -75,7 +75,7 @@ class TestImageInput:
         test_image_url = "https://example.com/test-image.jpg"
         
         response = client.post(
-            "/analyze-step",
+            "/api/analyze-step",
             json={
                 "current_data": {},
                 "input_type": "image",
@@ -93,7 +93,7 @@ class TestImageInput:
         large_base64_image = create_base64_image(size=(2000, 2000))
         
         response = client.post(
-            "/analyze-step",
+            "/api/analyze-step",
             json={
                 "current_data": {},
                 "new_input": large_base64_image,
@@ -109,7 +109,7 @@ class TestImageInput:
         invalid_base64 = "not-a-valid-base64-string!"
         
         response = client.post(
-            "/analyze-step",
+            "/api/analyze-step",
             json={
                 "current_data": {},
                 "new_input": invalid_base64,
@@ -129,7 +129,7 @@ class TestTextInput:
         test_text = "Beautiful 3-bedroom apartment with pool and parking"
         
         response = client.post(
-            "/analyze-step",
+            "/api/analyze-step",
             json={
                 "current_data": {"property_type": "apartment"},
                 "new_input": test_text,
@@ -145,7 +145,7 @@ class TestTextInput:
     def test_analyze_step_with_empty_text(self):
         """Test handling of empty text input."""
         response = client.post(
-            "/analyze-step",
+            "/api/analyze-step",
             json={
                 "current_data": {},
                 "new_input": "",
@@ -161,7 +161,7 @@ class TestTextInput:
         long_text = "This is a very long description " * 100
         
         response = client.post(
-            "/analyze-step",
+            "/api/analyze-step",
             json={
                 "current_data": {},
                 "new_input": long_text,
@@ -185,7 +185,7 @@ class TestFieldUpdate:
         }
         
         response = client.post(
-            "/analyze-step",
+            "/api/analyze-step",
             json={
                 "current_data": current_data,
                 "input_type": "field_update"
@@ -199,7 +199,7 @@ class TestFieldUpdate:
     def test_analyze_step_with_empty_field_update(self):
         """Test handling of field update with no current data."""
         response = client.post(
-            "/analyze-step",
+            "/api/analyze-step",
             json={
                 "current_data": {},
                 "input_type": "field_update"
@@ -227,7 +227,7 @@ class TestFieldUpdate:
         }
         
         response = client.post(
-            "/analyze-step",
+            "/api/analyze-step",
             json={
                 "current_data": complex_data,
                 "input_type": "field_update"
@@ -250,7 +250,7 @@ class TestMultipartFormData:
         base64_image = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
         
         response = client.post(
-            "/analyze-step",
+            "/api/analyze-step",
             json={
                 "current_data": {},
                 "new_input": base64_image,
@@ -265,7 +265,7 @@ class TestMultipartFormData:
         # Current implementation expects JSON, not multipart form data
         # Test the JSON approach instead
         response = client.post(
-            "/analyze-step",
+            "/api/analyze-step",
             json={
                 "current_data": {"test": "data"},
                 "new_input": "test text input",
@@ -286,7 +286,7 @@ class TestFileSizeLimits:
         large_base64 = base64.b64encode(large_image.getvalue()).decode('utf-8')
         
         response = client.post(
-            "/analyze-step",
+            "/api/analyze-step",
             json={
                 "current_data": {},
                 "new_input": large_base64,
@@ -303,7 +303,7 @@ class TestFileSizeLimits:
         large_string = "x" * (10 * 1024 * 1024)
         
         response = client.post(
-            "/analyze-step",
+            "/api/analyze-step",
             json={
                 "current_data": {"test": large_string[:1000]},  # Limit current_data size
                 "new_input": large_string,
@@ -321,7 +321,7 @@ class TestUnsupportedFileTypes:
     def test_unsupported_input_type(self):
         """Test handling of unsupported input types."""
         response = client.post(
-            "/analyze-step",
+            "/api/analyze-step",
             json={
                 "current_data": {},
                 "new_input": "some data",
@@ -335,7 +335,7 @@ class TestUnsupportedFileTypes:
     def test_invalid_json_payload(self):
         """Test handling of invalid JSON payloads."""
         response = client.post(
-            "/analyze-step",
+            "/api/analyze-step",
             content="invalid json {",
             headers={"Content-Type": "application/json"}
         )
@@ -346,7 +346,7 @@ class TestUnsupportedFileTypes:
         """Test handling of missing required fields."""
         # Missing input_type
         response = client.post(
-            "/analyze-step",
+            "/api/analyze-step",
             json={
                 "current_data": {},
                 "new_input": "test"
@@ -362,7 +362,7 @@ class TestResponseValidation:
     def test_response_structure(self):
         """Test that responses have the expected structure."""
         response = client.post(
-            "/analyze-step",
+            "/api/analyze-step",
             json={
                 "current_data": {"test": "value"},
                 "new_input": "test input",
@@ -391,7 +391,7 @@ class TestResponseValidation:
         """Test that different input types return appropriate responses."""
         # Test image input
         response_image = client.post(
-            "/analyze-step",
+            "/api/analyze-step",
             json={
                 "current_data": {},
                 "new_input": create_base64_image(),
@@ -401,7 +401,7 @@ class TestResponseValidation:
         
         # Test text input
         response_text = client.post(
-            "/analyze-step",
+            "/api/analyze-step",
             json={
                 "current_data": {},
                 "new_input": "test text",
@@ -411,7 +411,7 @@ class TestResponseValidation:
         
         # Test field update
         response_field = client.post(
-            "/analyze-step",
+            "/api/analyze-step",
             json={
                 "current_data": {"test": "value"},
                 "input_type": "field_update"
@@ -447,7 +447,7 @@ class TestErrorHandling:
         
         for request_data in malformed_requests:
             response = client.post(
-                "/analyze-step",
+                "/api/analyze-step",
                 json=request_data
             )
             
@@ -469,7 +469,7 @@ class TestErrorHandling:
         def make_request():
             try:
                 response = client.post(
-                    "/analyze-step",
+                    "/api/analyze-step",
                     json={
                         "current_data": {"concurrent": "test"},
                         "new_input": "concurrent test",
