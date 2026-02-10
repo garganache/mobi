@@ -168,32 +168,7 @@
     }
 
     // Update UI schema (this will trigger animations)
-    let schema = response.ui_schema || [];
-    
-    // CRITICAL: Always ensure property_type field is in the schema if we have images
-    // Backend might skip it if it thinks it knows the answer, but user should always see/verify it
-    if (uploadedImages.length > 0 && !schema.some(f => f.id === 'property_type')) {
-      console.log('⚠️ Backend omitted property_type field, adding it manually');
-      schema = [
-        {
-          id: 'property_type',
-          type: 'select',
-          label: 'Property Type',
-          required: true,
-          options: [
-            { value: 'apartment', label: 'Apartment' },
-            { value: 'house', label: 'House' },
-            { value: 'condo', label: 'Condo' },
-            { value: 'townhouse', label: 'Townhouse' },
-            { value: 'land', label: 'Land' },
-            { value: 'commercial', label: 'Commercial' }
-          ]
-        },
-        ...schema
-      ];
-    }
-    
-    formSchema = schema;
+    formSchema = response.ui_schema || [];
     
     // Update AI message
     aiMessage = response.ai_message || '';
