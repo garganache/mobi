@@ -25,6 +25,9 @@
         <div class="synthesis-title">
           <span class="property-icon">🏠</span>
           <h3>Property Analysis</h3>
+          {#if synthesis.layout_type === 'open_concept'}
+            <span class="layout-badge open-concept">Open Concept</span>
+          {/if}
         </div>
         <div class="synthesis-meta">
           <span class="room-badge">{synthesis.total_rooms} room{synthesis.total_rooms === 1 ? '' : 's'}</span>
@@ -63,6 +66,17 @@
             {#if synthesis.property_overview.common_amenities.length > 6}
               <span class="amenity-more">+{synthesis.property_overview.common_amenities.length - 6} more</span>
             {/if}
+          </div>
+        </div>
+      {/if}
+      
+      {#if synthesis.exterior_features && synthesis.exterior_features.length > 0}
+        <div class="exterior-features-section">
+          <h4>Exterior Features:</h4>
+          <div class="exterior-chips">
+            {#each synthesis.exterior_features as feature}
+              <span class="exterior-chip">{feature}</span>
+            {/each}
           </div>
         </div>
       {/if}
@@ -322,6 +336,48 @@
     font-size: 0.875rem;
     font-weight: 500;
     border: 1px solid #e5e7eb;
+  }
+
+  .exterior-features-section {
+    margin-bottom: 1rem;
+  }
+
+  .exterior-features-section h4 {
+    margin: 0 0 0.75rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .exterior-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .exterior-chip {
+    background: #d1fae5;
+    color: #065f46;
+    padding: 0.375rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid #a7f3d0;
+    text-transform: capitalize;
+  }
+
+  .layout-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+
+  .layout-badge.open-concept {
+    background: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
   }
 
   .property-insights {

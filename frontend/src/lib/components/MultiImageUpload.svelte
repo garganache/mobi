@@ -110,8 +110,15 @@
       clearInterval(progressInterval);
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: 'Analysis failed' }));
-        throw new Error(errorData.detail || 'Analysis failed');
+        let errorMessage = 'Analysis failed';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.detail || errorMessage;
+        } catch (e) {
+          // If JSON parsing fails, use status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
       
       const result = await response.json();
@@ -125,6 +132,13 @@
       
       // Store synthesis result
       synthesis = result.synthesis;
+      
+      // Show success indicator for 3 seconds, then optionally clear uploads
+      setTimeout(() => {
+        // Option to clear uploads after successful analysis
+        // Uncomment the next line if you want to auto-clear uploads after success
+        // clearUploadsAfterSuccess();
+      }, 3000);
       
       // Dispatch completion event
       dispatch('analysisComplete', { 
@@ -203,6 +217,15 @@
     uploads = [];
     synthesis = null;
     error = null;
+    isAnalyzing = false;
+  }
+
+  // Function to clear uploads after successful analysis
+  function clearUploadsAfterSuccess() {
+    uploads.forEach(upload => {
+      URL.revokeObjectURL(upload.previewUrl);
+    });
+    uploads = [];
   }
 
   // Cleanup on destroy
