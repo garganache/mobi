@@ -46,6 +46,9 @@
   function handleFileSelect(selectedFiles: File[]) {
     error = null;
     
+    console.log('handleFileSelect called with', selectedFiles.length, 'files');
+    console.log('Current uploads before filtering:', uploads.length);
+    
     const validFiles: File[] = [];
     
     for (const file of selectedFiles) {
@@ -59,15 +62,18 @@
     
     if (validFiles.length === 0) return;
     
-    // Check if we have room for more images
-    if (uploads.length + validFiles.length > maxImages) {
-      error = `Maximum ${maxImages} images allowed. You can add ${maxImages - uploads.length} more.`;
+    // Check if we have room for more images (only count active uploads, not completed ones)
+    const activeUploads = uploads.filter(u => !u.isComplete);
+    console.log('Active uploads (not completed):', activeUploads.length);
+    if (activeUploads.length + validFiles.length > maxImages) {
+      error = `Maximum ${maxImages} images allowed. You can add ${maxImages - activeUploads.length} more.`;
       return;
     }
     
     // Clear any existing completed uploads before adding new ones
     // This prevents accumulation of old completed uploads
     uploads = uploads.filter(u => !u.isComplete);
+    console.log('After filtering out completed uploads:', uploads.length);
     
     // Create upload entries
     const newUploads: ImageUpload[] = validFiles.map(file => ({
@@ -80,11 +86,13 @@
     }));
     
     uploads = [...uploads, ...newUploads];
+    console.log('Final uploads count after adding new files:', uploads.length);
   }
 
   async function analyzeAllImages() {
     if (uploads.length === 0) return;
     
+    console.log('Before analysis, uploads.length:', uploads.length);
     isAnalyzing = true;
     error = null;
     synthesis = null;
@@ -136,19 +144,21 @@
         isComplete: true
       }));
       
+      console.log('After analysis, uploads.length:', uploads.length);
+      
       // Store synthesis result
       synthesis = result.synthesis;
       
-      // Clear uploads after successful analysis (auto-clear option)
-      setTimeout(() => {
-        clearAll();
-      }, 3000);
-      
-      // Dispatch completion event
+      // Dispatch completion event FIRST
       dispatch('analysisComplete', { 
         synthesis: result.synthesis,
-        individualAnalyses: result.individual_analyses
+        individualAnalyses: result.individual_analyses,
+        imageUrls: uploads.map(u => u.previewUrl)  // Pass image URLs
       });
+      
+      // THEN immediately clear uploads (no delay to prevent duplication)
+      clearAll();
+      console.log('After clearAll, uploads.length:', uploads.length);
       
     } catch (err) {
       clearInterval(progressInterval);
@@ -215,6 +225,7 @@
   }
 
   function clearAll() {
+    console.log('clearAll() called, current uploads.length:', uploads.length);
     uploads.forEach(upload => {
       URL.revokeObjectURL(upload.previewUrl);
     });
@@ -222,6 +233,7 @@
     synthesis = null;
     error = null;
     isAnalyzing = false;
+    console.log('After clearAll, uploads.length:', uploads.length);
   }
 
   // Function to clear uploads after successful analysis
