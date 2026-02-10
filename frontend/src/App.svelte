@@ -102,21 +102,6 @@
       aiMessage = `Successfully analyzed ${synthesis?.total_rooms || 0} rooms. Check the overview above for details.`;
     }
     
-    // Auto-fill property_type from synthesis if detected by AI and not already set
-    if (synthesis?.property_overview?.property_type) {
-      const detectedType = synthesis.property_overview.property_type;
-      const currentValue = listingStore.getFieldValue('property_type');
-      
-      if (!currentValue || currentValue === null || currentValue === '') {
-        console.log(`🏠 Auto-filling property_type = "${detectedType}" from AI synthesis`);
-        // Use setFieldValue to ensure it's actually set (not just suggested)
-        listingStore.setFieldValue('property_type', detectedType);
-        console.log(`✅ property_type set to: ${listingStore.getFieldValue('property_type')}`);
-      } else {
-        console.log(`⏭️ property_type already has value: ${currentValue}, not auto-filling`);
-      }
-    }
-    
     // Save state immediately after batch upload
     saveCurrentState();
     
@@ -191,6 +176,20 @@
     // Update progress
     currentStep = response.step_number || 0;
     completionPercentage = response.completion_percentage || 0;
+
+    // Auto-fill property_type from synthesis if detected by AI (after schema is loaded!)
+    if (synthesisData?.property_overview?.property_type && formSchema.some(f => f.id === 'property_type')) {
+      const detectedType = synthesisData.property_overview.property_type;
+      const currentValue = listingStore.getFieldValue('property_type');
+      
+      if (!currentValue || currentValue === null || currentValue === '') {
+        console.log(`🏠 Auto-filling property_type = "${detectedType}" from AI synthesis (after schema loaded)`);
+        listingStore.setFieldValue('property_type', detectedType);
+        console.log(`✅ property_type now set to: ${listingStore.getFieldValue('property_type')}`);
+      } else {
+        console.log(`⏭️ property_type already has value: ${currentValue}, not auto-filling`);
+      }
+    }
 
     // Save current state
     saveCurrentState();
