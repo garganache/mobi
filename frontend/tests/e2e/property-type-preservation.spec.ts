@@ -207,9 +207,17 @@ test.describe('Property Type Preservation', () => {
 
     // Wait for property overview to appear
     await page.waitForSelector('text=/Property Overview|total rooms/i', { timeout: 5000 });
+    console.log('✓ Property overview appeared');
 
-    // STEP 2: Wait for property_type field and select "apartment"
-    console.log('Step 2: Selecting property_type = apartment');
+    // After batch upload, app automatically calls analyze-step which returns form schema
+    // Wait for the first form field to appear
+    console.log('Step 2: Waiting for form fields to appear...');
+    
+    // Wait for ANY form field to appear (could be property_type or another field depending on mock)
+    await page.waitForSelector('select#property_type, input[id], select[id]', { timeout: 10000 });
+    console.log('✓ Form fields appeared');
+
+    // Now specifically wait for and select property_type
     await page.waitForSelector('select#property_type', { timeout: 5000 });
     await page.selectOption('select#property_type', 'apartment');
     
