@@ -27,9 +27,21 @@
   let individualAnalyses: any[] = [];
   let showPreview = false;
   let uploadedImages: string[] = [];
+  
+  // Debug: Watch for showPreview changes
+  $: {
+    if (showPreview) {
+      console.log('🔵 showPreview changed to TRUE');
+      console.log('  - listingData:', listingStore.toJSON());
+      console.log('  - images:', uploadedImages.length);
+    } else {
+      console.log('🔴 showPreview changed to FALSE');
+    }
+  }
 
   // Load saved state on mount
   onMount(() => {
+    console.log('🚀 App mounted');
     loadSavedState();
   });
 
@@ -54,6 +66,9 @@
     } else {
       aiMessage = `Successfully analyzed ${synthesis?.total_rooms || 0} rooms. Check the overview above for details.`;
     }
+    
+    // Save state immediately after batch upload
+    saveCurrentState();
     
     // Trigger form progression
     await analyzeStep('field_update');
@@ -124,8 +139,13 @@
       schema: formSchema,
       aiMessage,
       currentStep,
-      completionPercentage
+      completionPercentage,
+      synthesisData,
+      individualAnalyses,
+      uploadedImages,
+      showPreview
     };
+    console.log('💾 Saving state:', state);
     localStorage.setItem('mobi_listing_state', JSON.stringify(state));
   }
 
@@ -134,14 +154,22 @@
     if (saved) {
       try {
         const state = JSON.parse(saved);
+        console.log('📂 Loading saved state:', state);
         listingStore.loadState(state.formData);
         formSchema = state.schema || [];
         aiMessage = state.aiMessage || '';
         currentStep = state.currentStep || 0;
         completionPercentage = state.completionPercentage || 0;
+        synthesisData = state.synthesisData || null;
+        individualAnalyses = state.individualAnalyses || [];
+        uploadedImages = state.uploadedImages || [];
+        showPreview = state.showPreview || false;
+        console.log('✅ State loaded successfully');
       } catch (e) {
-        console.warn('Failed to load saved state:', e);
+        console.error('❌ Failed to load saved state:', e);
       }
+    } else {
+      console.log('ℹ️  No saved state found');
     }
   }
 
@@ -159,7 +187,33 @@
   }
 
   function handleFormComplete() {
+    console.log('=== handleFormComplete called ===');
+    console.log('listingData:', listingStore.toJSON());
+    console.log('synthesisData:', synthesisData);
+    console.log('uploadedImages:', uploadedImages);
+    console.log('individualAnalyses:', individualAnalyses);
+    console.log('completionPercentage:', completionPercentage);
+    
+    // Verify minimum data requirements
+    const listingData = listingStore.toJSON();
+    if (!listingData.property_type) {
+      console.error('ERROR: property_type is missing!');
+      error = 'Please select a property type before previewing';
+      return;
+    }
+    
+    if (uploadedImages.length === 0) {
+      console.error('ERROR: No images uploaded!');
+      error = 'Please upload at least one image before previewing';
+      return;
+    }
+    
+    console.log('All checks passed, setting showPreview = true');
     showPreview = true;
+    console.log('showPreview is now:', showPreview);
+    
+    // Save state so preview persists across refreshes
+    saveCurrentState();
   }
 
   function handleEditListing() {
