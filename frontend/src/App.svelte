@@ -150,7 +150,14 @@
     // Update form state with extracted data
     if (response.extracted_data) {
       Object.entries(response.extracted_data).forEach(([fieldId, value]) => {
-        listingStore.setFieldValue(fieldId, value);
+        // Only set if field is currently empty/null (don't overwrite user input!)
+        const currentValue = listingStore.getFieldValue(fieldId);
+        if (currentValue === null || currentValue === undefined || currentValue === '') {
+          console.log(`📝 Setting ${fieldId} = ${value} (was empty)`);
+          listingStore.setFieldValue(fieldId, value);
+        } else {
+          console.log(`⏭️  Skipping ${fieldId}, already has value: ${currentValue}`);
+        }
       });
     }
 
