@@ -128,13 +128,16 @@
         return upload;
       });
       
-      // Extract image URLs from the upload entries we just processed
-      const imageUrls = uploadEntries.map(u => u.previewUrl);
+      // Convert files to base64 data URLs for persistence
+      // (blob URLs get revoked, but data URLs persist)
+      const imageDataUrls = await Promise.all(
+        files.map(file => fileToDataURL(file))
+      );
       
       dispatch('batchUploadSuccess', { 
         synthesis: result.synthesis,
         individualAnalyses: result.individual_analyses,
-        imageUrls: imageUrls
+        imageUrls: imageDataUrls  // Use data URLs instead of blob URLs
       });
 
     } catch (err) {
@@ -157,6 +160,16 @@
         batchUploadProgress = 0;
       }, 500);
     }
+  }
+
+  // Convert File to data URL (base64) - these persist unlike blob URLs
+  function fileToDataURL(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   }
 
   function handleDrop(e: DragEvent) {
