@@ -6,11 +6,13 @@
   export let individualAnalyses: any[] = [];
   export let expanded: boolean = false;
 
-  let showIndividualAnalyses = false;
+  let showIndividualAnalyses = true;
 
   $: if (synthesis) {
-    showIndividualAnalyses = false;
+    showIndividualAnalyses = true;
   }
+
+  $: console.log('SynthesisDisplay individualAnalyses:', individualAnalyses);
 
   function formatRoomName(roomType: string): string {
     return roomType
@@ -104,7 +106,10 @@
           on:click={() => showIndividualAnalyses = !showIndividualAnalyses}
         >
           <Grid size={16} />
-          <span>View Individual Analyses</span>
+          <span class="toggle-text">
+            {showIndividualAnalyses ? 'Hide' : 'Show'} 
+            Individual Room Analyses ({individualAnalyses.length} images)
+          </span>
           {#if showIndividualAnalyses}
             <ChevronUp size={16} />
           {:else}
@@ -320,6 +325,10 @@
   .toggle-button:hover {
     background: #e5e7eb;
     border-color: #9ca3af;
+  }
+
+  .toggle-text {
+    font-weight: 600;
   }
 
   .individual-analyses {
