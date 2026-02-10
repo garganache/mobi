@@ -5,6 +5,7 @@
   import SynthesisDisplay from './lib/components/SynthesisDisplay.svelte';
   import AIMessage from './lib/components/AIMessage.svelte';
   import AnimatedDynamicForm from './lib/components/AnimatedDynamicForm.svelte';
+  import ListingPreview from './lib/components/ListingPreview.svelte';
   import { listingStore } from './lib/stores/listingStore';
   import type { FieldSchema } from './lib/components/AnimatedDynamicForm.svelte';
 
@@ -24,6 +25,8 @@
   let error: string | null = null;
   let synthesisData: any = null;
   let individualAnalyses: any[] = [];
+  let showPreview = false;
+  let uploadedImages: string[] = [];
 
   // Load saved state on mount
   onMount(() => {
@@ -36,9 +39,14 @@
   }
 
   async function handleBatchUpload(event: CustomEvent) {
-    const { synthesis, individualAnalyses: analyses } = event.detail;
+    const { synthesis, individualAnalyses: analyses, imageUrls } = event.detail;
     synthesisData = synthesis;
     individualAnalyses = analyses;
+    
+    // Track uploaded images
+    if (imageUrls && Array.isArray(imageUrls)) {
+      uploadedImages = [...uploadedImages, ...imageUrls];
+    }
     
     // Update AI message to show synthesis
     if (synthesis && synthesis.unified_description) {
@@ -144,8 +152,23 @@
       aiMessage = '';
       currentStep = 0;
       completionPercentage = 0;
+      showPreview = false;
+      uploadedImages = [];
       localStorage.removeItem('mobi_listing_state');
     }
+  }
+
+  function handleFormComplete() {
+    showPreview = true;
+  }
+
+  function handleEditListing() {
+    showPreview = false;
+  }
+
+  function handleSubmitListing() {
+    // TODO: Implement listing submission
+    alert('Listing submission coming soon!');
   }
 
   // Note: Removed auto-subscribe to prevent infinite loop.
@@ -156,7 +179,7 @@
   <header class="app-header">
     <h1>Mobi Property Listing</h1>
     <div class="header-actions">
-      {#if completionPercentage > 0}
+      {#if completionPercentage > 0 && !showPreview}
         <div class="progress-indicator">
           <span class="progress-text">{Math.round(completionPercentage)}% Complete</span>
           <div class="progress-bar">
@@ -172,76 +195,92 @@
     </div>
   </header>
 
-  <div class="app-content">
-    {#if synthesisData}
-      <div class="synthesis-container" in:fade={{ duration: 400 }}>
-        <SynthesisDisplay 
-          synthesis={synthesisData} 
-          individualAnalyses={individualAnalyses}
-        />
-      </div>
-    {/if}
-
-    {#if aiMessage}
-      <div class="ai-message-container" in:fly={{ y: -20, duration: 400 }}>
-        <AIMessage 
-          message={aiMessage} 
-          avatar="ai"
-          typing={isLoading}
-        />
-      </div>
-    {/if}
-
-    {#if formSchema.length === 0}
-      <!-- Initial state - show image upload -->
-      <div class="initial-upload" in:fade={{ duration: 500 }}>
-        <div class="upload-section">
-          <h2>Get Started</h2>
-          <p>Upload an image of your property to begin creating your listing</p>
-          <ImageUpload 
-            on:uploadSuccess={handleImageUpload}
-            on:batchUploadSuccess={handleBatchUpload}
-            on:uploadError={(e) => error = e.detail.error}
-            batchMode={true}
+  {#if showPreview}
+    <ListingPreview
+      listingData={listingStore.toJSON()}
+      synthesis={synthesisData}
+      images={uploadedImages}
+      onEdit={handleEditListing}
+      onSubmit={handleSubmitListing}
+    />
+  {:else}
+    <div class="app-content">
+      {#if synthesisData}
+        <div class="synthesis-container" in:fade={{ duration: 400 }}>
+          <SynthesisDisplay 
+            synthesis={synthesisData} 
+            individualAnalyses={individualAnalyses}
           />
         </div>
-      </div>
-    {:else}
-      <!-- Progressive form -->
-      <div class="progressive-form" in:fade={{ duration: 500 }}>
-        <div class="form-container">
-          <AnimatedDynamicForm 
-            schema={formSchema}
-            animationDuration={400}
-            staggerDelay={80}
-            highlightNewFields={true}
+      {/if}
+
+      {#if aiMessage}
+        <div class="ai-message-container" in:fly={{ y: -20, duration: 400 }}>
+          <AIMessage 
+            message={aiMessage} 
+            avatar="ai"
+            typing={isLoading}
           />
         </div>
+      {/if}
 
-        <div class="actions-section">
-          <button 
-            class="submit-button"
-            disabled={isLoading}
-            on:click={() => analyzeStep('field_update')}
-          >
-            {isLoading ? 'Processing...' : 'Continue'}
-          </button>
+      {#if formSchema.length === 0}
+        <!-- Initial state - show image upload -->
+        <div class="initial-upload" in:fade={{ duration: 500 }}>
+          <div class="upload-section">
+            <h2>Get Started</h2>
+            <p>Upload an image of your property to begin creating your listing</p>
+            <ImageUpload 
+              on:uploadSuccess={handleImageUpload}
+              on:batchUploadSuccess={handleBatchUpload}
+              on:uploadError={(e) => error = e.detail.error}
+              batchMode={true}
+            />
+          </div>
         </div>
-      </div>
-    {/if}
+      {:else}
+        <!-- Progressive form -->
+        <div class="progressive-form" in:fade={{ duration: 500 }}>
+          <div class="form-container">
+            <AnimatedDynamicForm 
+              schema={formSchema}
+              animationDuration={400}
+              staggerDelay={80}
+              highlightNewFields={true}
+            />
+          </div>
 
-    {#if error}
-      <div class="error-message" in:fade={{ duration: 300 }}>
-        <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="8" x2="12" y2="12" />
-          <line x1="12" y1="16" x2="12.01" y2="16" />
-        </svg>
-        {error}
-        <button class="dismiss-error" on:click={() => error = null}>×</button>
-      </div>
-    {/if}
-  </div>
+          <div class="actions-section">
+            <button 
+              class="submit-button"
+              disabled={isLoading}
+              on:click={() => {
+                if (completionPercentage >= 100) {
+                  handleFormComplete();
+                } else {
+                  analyzeStep('field_update');
+                }
+              }}
+            >
+              {isLoading ? 'Processing...' : completionPercentage >= 100 ? 'Preview Listing' : 'Continue'}
+            </button>
+          </div>
+        </div>
+      {/if}
+
+      {#if error}
+        <div class="error-message" in:fade={{ duration: 300 }}>
+          <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          {error}
+          <button class="dismiss-error" on:click={() => error = null}>×</button>
+        </div>
+      {/if}
+    </div>
+  {/if}
 </main>
 
 <style>
