@@ -464,6 +464,7 @@ def get_vision_model(model_type: str = "mock", **kwargs) -> VisionModelInterface
         _vision_model = create_vision_model(model_type, **kwargs)
     return _vision_model
 
+
 def analyze_multiple_images(
     images: list[bytes],
     model_type: str = "mock",
@@ -758,34 +759,19 @@ def generate_unified_description(
     interior_analyses: list = None
 ) -> str:
     """
-    Generate a coherent unified description from multiple analyses.
-    
-    NOTE: Does not mention specific room counts in description text, as we cannot
-    reliably determine if multiple images show the same room from different angles
-    or different rooms. Instead, describes room TYPES detected.
-    
-    Args:
-        total_rooms: Total number of rooms (used internally but not mentioned in description)
-        room_breakdown: Dictionary of room types and counts
-        amenities: List of all amenities found
-        materials: List of all materials found
-        property_type: Dominant property type
-        style: Dominant style
-        analyses: Original individual analyses
-        layout_type: "open_concept" or "traditional"
-        exterior_features: List of exterior features
-        
-    Returns:
-        Unified description string (without specific room counts)
+    Generate Romanian property description.
     """
     if total_rooms == 0 and not exterior_features:
-        return "No rooms detected in the provided images."
+        return "Nu au fost detectate camere în imaginile furnizate."
     
-    # Build room description (types only, no counts - we can't reliably detect duplicates)
+    # Translate property type
+    property_type_ro = _translate_property_type(property_type)
+    
+    # Build room description (types only, no counts)
     room_types = []
     for room_type in sorted(room_breakdown.keys()):
-        room_name = room_type.replace("_", " ").title()
-        room_types.append(room_name)
+        room_name_ro = _translate_room_type(room_type)
+        room_types.append(room_name_ro)
     
     room_description = ", ".join(room_types)
     
@@ -795,58 +781,60 @@ def generate_unified_description(
         original_rooms = interior_analyses[0].get("rooms", {})
         functional_areas = []
         for room_type, count in original_rooms.items():
-            room_name = room_type.replace("_", " ").title()
-            functional_areas.append(room_name)
+            room_name_ro = _translate_room_type(room_type)
+            functional_areas.append(room_name_ro)
         if functional_areas:
             room_description = ", ".join(functional_areas)
     
     # Build amenities description
-    amenity_descriptions = []
+    amenity_descriptions_ro = []
     
     # Check for common patterns
     if "hardwood_floors" in materials and sum(1 for a in analyses if "hardwood_floors" in a.get("amenities", [])) > len(analyses) / 2:
-        amenity_descriptions.append("hardwood floors throughout")
+        amenity_descriptions_ro.append("parchet în toate camerele")
     
     if "granite_counters" in amenities:
-        amenity_descriptions.append("granite countertops")
+        amenity_descriptions_ro.append("blat de granit")
     
     if "stainless_steel" in amenities:
-        amenity_descriptions.append("stainless steel appliances")
+        amenity_descriptions_ro.append("aparate din oțel inoxidabil")
     
     if "fireplace" in amenities:
-        amenity_descriptions.append("fireplace")
+        amenity_descriptions_ro.append("șemineu")
     
     if "dishwasher" in amenities:
-        amenity_descriptions.append("dishwasher")
+        amenity_descriptions_ro.append("mașină de spălat vase")
     
     # Add other notable amenities
     other_amenities = [a for a in amenities if a not in ["hardwood_floors", "granite_counters", "stainless_steel", "fireplace", "dishwasher"]]
     if other_amenities:
         # Pick a few more to mention
-        notable = [a.replace("_", " ") for a in other_amenities[:2]]
-        amenity_descriptions.extend(notable)
+        for amenity in other_amenities[:2]:
+            translated = _translate_amenity(amenity)
+            amenity_descriptions_ro.append(translated)
     
     # Build final description based on layout type
-    # Don't mention room counts - we can't tell if images show same room from different angles
     if layout_type == "open_concept":
-        description = f"This {property_type} features an open-concept design"
+        description = f"Acest {property_type_ro} prezintă un design open-concept"
         if room_description:
-            description += f" with {room_description} areas"
+            description += f" cu zone de {room_description}"
     else:
         if room_description:
-            description = f"This {property_type} includes {room_description}"
+            description = f"Acest {property_type_ro} include {room_description}"
         else:
-            description = f"This {property_type}"
+            description = f"Acest {property_type_ro}"
     
-    if amenity_descriptions:
-        description += f". Features include {', '.join(amenity_descriptions)}"
+    if amenity_descriptions_ro:
+        description += f". Caracteristici includ {', '.join(amenity_descriptions_ro)}"
     
     # Add exterior features if present
     if exterior_features:
-        description += f". Exterior features include {', '.join(exterior_features)}"
+        exterior_ro = [_translate_feature(f) for f in exterior_features]
+        description += f". Caracteristici exterioare includ {', '.join(exterior_ro)}"
     
     if style and style != "unknown":
-        description += f". Overall style: {style}"
+        style_ro = _translate_style(style)
+        description += f". Stil general: {style_ro}"
     
     description += "."
     
@@ -906,3 +894,74 @@ def analyze_property_image(image_data: bytes, model_type: str = "mock",
     # Create vision model directly with kwargs instead of using global instance
     vision_model = create_vision_model(model_type, **model_kwargs)
     return vision_model.analyze_image(image_data, prompt)
+
+
+def _translate_property_type(property_type: str) -> str:
+    """Translate property type to Romanian."""
+    translations = {
+        'apartment': 'apartament',
+        'house': 'casă',
+        'condo': 'condominium',
+        'townhouse': 'casă în șir',
+        'land': 'teren',
+        'commercial': 'proprietate comercială'
+    }
+    return translations.get(property_type, property_type)
+
+def _translate_room_type(room_type: str) -> str:
+    """Translate room type to Romanian."""
+    translations = {
+        'bedroom': 'Dormitor',
+        'kitchen': 'Bucătărie',
+        'living_room': 'Sufragerie',
+        'bathroom': 'Baie',
+        'hallway': 'Hol',
+        'dining_room': 'Cameră de Mâncare',
+        'office': 'Birou',
+        'balcony': 'Balcon',
+        'open_concept_space': 'Spațiu Open-Concept'
+    }
+    return translations.get(room_type, room_type.replace('_', ' ').title())
+
+def _translate_feature(feature: str) -> str:
+    """Translate exterior feature to Romanian."""
+    translations = {
+        'balcony': 'balcon',
+        'garage': 'garaj',
+        'garden': 'grădină',
+        'pool': 'piscină',
+        'patio': 'patio',
+        'deck': 'terasă',
+        'outdoor living space': 'spațiu de locuit în aer liber',
+        'landscaping': 'peisagistică',
+        'parking': 'parcare'
+    }
+    return translations.get(feature.lower(), feature)
+
+def _translate_style(style: str) -> str:
+    """Translate style to Romanian."""
+    translations = {
+        'modern': 'modern',
+        'traditional': 'tradițional',
+        'contemporary': 'contemporan',
+        'rustic': 'rustic',
+        'industrial': 'industrial',
+        'minimalist': 'minimalist'
+    }
+    return translations.get(style.lower(), style)
+
+def _translate_amenity(amenity: str) -> str:
+    """Translate amenity to Romanian."""
+    translations = {
+        'hardwood_floors': 'parchet',
+        'granite_counters': 'blat de granit',
+        'stainless_steel': 'oțel inoxidabil',
+        'fireplace': 'șemineu',
+        'dishwasher': 'mașină de spălat vase',
+        'large_window': 'fereastră mare',
+        'tile_floors': 'gresie',
+        'bathtub': 'cadă',
+        'updated_fixtures': 'obiecte sanitare actualizate',
+        'chandelier': 'candelabru'
+    }
+    return translations.get(amenity, amenity.replace('_', ' '))

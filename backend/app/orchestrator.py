@@ -205,13 +205,15 @@ class FieldOrchestrator:
                 UIField(
                     id="property_type",
                     component_type="select",
-                    label="Property Type",
-                    placeholder="Select property type",
+                    label="Tipul Proprietății",
+                    placeholder="Selectați tipul proprietății",
                     options=[
-                        FieldOption(value="house", label="House"),
-                        FieldOption(value="apartment", label="Apartment"),
-                        FieldOption(value="condo", label="Condo"),
-                        FieldOption(value="townhouse", label="Townhouse"),
+                        FieldOption(value="house", label="Casă"),
+                        FieldOption(value="apartment", label="Apartament"),
+                        FieldOption(value="condo", label="Condominium"),
+                        FieldOption(value="townhouse", label="Casă în Șir"),
+                        FieldOption(value="land", label="Teren"),
+                        FieldOption(value="commercial", label="Comercial"),
                     ],
                     required=True,
                 )
@@ -269,33 +271,43 @@ class FieldOrchestrator:
         """
         Generate an appropriate AI message based on the current state and next fields.
         """
-        # If we only have property_type field to ask for, this is the first step
-        if len(next_fields) == 1 and next_fields[0].id == "property_type":
-            return "Let's start by identifying what type of property you're listing."
+        return self._generate_ai_message(current_data, len(current_data))
+    
+    def _generate_ai_message(self, current_data: Dict[str, Any], step: int) -> str:
+        """Generate Romanian AI guidance message based on current state."""
         
-        # If property_type is not in current data but we have other fields, 
-        # it means we're in a field update scenario
-        if "property_type" not in current_data:
-            return "Let's start by identifying what type of property you're listing."
+        # No property type yet
+        if not current_data.get("property_type"):
+            return "Să începem prin a identifica ce tip de proprietate afișați."
         
-        property_type = current_data.get("property_type")
-        completed_fields = len(current_data)
+        property_type_ro = self._translate_property_type(current_data.get("property_type"))
         
-        # Property-specific messages
-        if property_type == "house" and completed_fields <= 3:
-            return "Great! Now let's get some details about your house - lot size, roof age, and garage information."
-        elif property_type == "apartment" and completed_fields <= 3:
-            return "Perfect! Let me gather some apartment-specific details like floor number and building amenities."
-        elif property_type == "condo" and completed_fields <= 3:
-            return "Excellent! Condo listings need some specific information about fees and building amenities."
+        # Early steps
+        if step < 3:
+            return f"Excelent! Am identificat că este vorba despre un {property_type_ro}. Să continuăm cu detaliile esențiale."
         
-        # Progress-based messages
-        if completed_fields <= 2:
-            return "Let's continue with the essential details about your property."
-        elif completed_fields <= 5:
-            return "You're making good progress! Just a few more key details."
-        else:
-            return "Almost done! Let me get the final details for your listing."
+        # Middle steps
+        if step < 5:
+            return "Faceți progrese bune! Încă câteva detalii cheie pentru anunțul dvs."
+        
+        # Later steps
+        if step < 7:
+            return "Aproape gata! Permiteți-mi să completez informațiile finale."
+        
+        # Complete
+        return "Perfect! Ați completat toate informațiile necesare. Sunteți gata să previzualizați și să salvați anunțul?"
+
+    def _translate_property_type(self, property_type: str) -> str:
+        """Translate property type to Romanian."""
+        translations = {
+            'apartment': 'apartament',
+            'house': 'casă',
+            'condo': 'condominium',
+            'townhouse': 'casă în șir',
+            'land': 'teren',
+            'commercial': 'proprietate comercială'
+        }
+        return translations.get(property_type, property_type)
     
     def calculate_completion_percentage(self, current_data: Dict[str, Any]) -> float:
         """

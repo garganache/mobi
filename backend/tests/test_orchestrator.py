@@ -86,7 +86,7 @@ class TestFieldOrchestrator:
         next_fields = orchestrator.get_next_fields(current_data)
         message = orchestrator.generate_ai_message(current_data, next_fields)
         
-        assert "type of property" in message.lower()
+        assert "tip de proprietate" in message.lower()
     
     def test_generate_ai_message_apartment(self):
         """Test AI message for apartment."""
@@ -94,7 +94,7 @@ class TestFieldOrchestrator:
         next_fields = orchestrator.get_next_fields(current_data)
         message = orchestrator.generate_ai_message(current_data, next_fields)
         
-        assert "apartment" in message.lower()
+        assert "apartament" in message.lower()
     
     def test_generate_ai_message_house(self):
         """Test AI message for house."""
@@ -102,7 +102,7 @@ class TestFieldOrchestrator:
         next_fields = orchestrator.get_next_fields(current_data)
         message = orchestrator.generate_ai_message(current_data, next_fields)
         
-        assert "house" in message.lower()
+        assert "casă" in message.lower()
     
     def test_calculate_completion_percentage(self):
         """Test completion percentage calculation."""

@@ -4,7 +4,7 @@
   import { flip } from 'svelte/animate';
   import { getComponent } from './fields/registry';
   import { listingStore } from '../stores/listingStore';
-  import { t } from '../i18n';
+  import { t, getFieldLabel } from '../i18n';
   import type { FieldValue } from '../stores/listingStore';
 
   /**
@@ -165,7 +165,7 @@
           <svelte:component
             this={component}
             id={field.id}
-            label={field.label}
+            label={getFieldLabel(field.label, field.id)}
             value={$listingStore[field.id]?.value ?? null}
             placeholder={field.placeholder}
             options={field.options}

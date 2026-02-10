@@ -88,9 +88,9 @@ test.describe('Property Type Preservation', () => {
               label: 'Property Type',
               required: true,
               options: [
-                { value: 'apartment', label: 'Apartment' },
-                { value: 'house', label: 'House' },
-                { value: 'condo', label: 'Condo' }
+                { value: 'apartment', label: 'Apartament' },
+                { value: 'house', label: 'Casă' },
+                { value: 'condo', label: 'Condominium' }
               ]
             }
           ],

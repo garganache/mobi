@@ -39,6 +39,48 @@ export const translations = {
     'field.zip': 'Cod Poștal',
     'field.description': 'Descriere',
     'field.title': 'Titlu',
+    'field.lot_size': 'Dimensiunea Terenului',
+    'field.roof_age': 'Vârsta Acoperișului',
+    'field.garage_type': 'Tip Garaj',
+    'field.number_of_stories': 'Număr de Etaje',
+    'field.floor_number': 'Numărul Etajului',
+    'field.has_elevator': 'Are Lift',
+    'field.building_age': 'Vârsta Clădirii',
+    'field.pets_allowed': 'Animalele de Companie Permise',
+    'field.monthly_condo_fees': 'Taxe Lunare de Condominium',
+    'field.building_amenities': 'Facilități ale Clădirii',
+    'field.has_parking': 'Are Parcare',
+    'field.has_pool': 'Are Piscină',
+    
+    // Field labels (English to Romanian mapping for dynamic fields)
+    'label.Property Type': 'Tipul Proprietății',
+    'label.Price': 'Preț',
+    'label.Number of Bedrooms': 'Număr de Dormitoare',
+    'label.Number of Bathrooms': 'Număr de Băi',
+    'label.Square Feet': 'Suprafață (metri pătrați)',
+    'label.Address': 'Adresă',
+    'label.Description': 'Descriere',
+    'label.Has Parking': 'Are Parcare',
+    'label.Has Pool': 'Are Piscină',
+    'label.Lot Size (sq ft)': 'Dimensiunea Terenului (mp)',
+    'label.Roof Age (years)': 'Vârsta Acoperișului (ani)',
+    'label.Garage Type': 'Tip Garaj',
+    'label.Number of Stories': 'Număr de Etaje',
+    'label.Floor Number': 'Numărul Etajului',
+    'label.Has Elevator': 'Are Lift',
+    'label.Building Age (years)': 'Vârsta Clădirii (ani)',
+    'label.Pets Allowed': 'Animalele de Companie Permise',
+    'label.Monthly Condo Fees': 'Taxe Lunare de Condominium',
+    'label.Building Amenities': 'Facilități ale Clădirii',
+    'label.Radiators': 'Radiatoare',
+    'label.Decorative Ceiling': 'Tavan Decorativ',
+    'label.Skylights': 'Ferestre de Mansardă',
+    'label.Large Windows': 'Ferestre Mari',
+    'label.Fireplace': 'Șemineu',
+    'label.French Doors': 'Uși Franceze',
+    'label.Hardwood Floors': 'Parchet',
+    'label.Granite Counters': 'Blat de Granit',
+    'label.Stainless Steel Appliances': 'Aparate din Oțel Inoxidabil',
     
     // Rooms
     'room.bedroom': 'Dormitor',
@@ -170,4 +212,24 @@ export function getRoomLabel(value: string): string {
 // Helper for amenity labels
 export function getAmenityLabel(value: string): string {
   return t(`amenity.${value}`);
+}
+
+// Helper for field labels (translates English backend labels to Romanian)
+export function getFieldLabel(label: string, fieldId?: string): string {
+  // First try to translate using the label directly
+  const translatedLabel = t(`label.${label}`);
+  if (translatedLabel !== `label.${label}`) {
+    return translatedLabel;
+  }
+  
+  // Fallback to field ID if provided
+  if (fieldId) {
+    const fieldTranslation = t(`field.${fieldId}`);
+    if (fieldTranslation !== `field.${fieldId}`) {
+      return fieldTranslation;
+    }
+  }
+  
+  // Return original if no translation found
+  return label;
 }

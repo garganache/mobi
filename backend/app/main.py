@@ -253,6 +253,13 @@ def analyze_step(request: AnalyzeStepRequest, db: Session = Depends(get_db)):
                 extracted_data["bedrooms"] = 2
             if "has_pool" not in extracted_data:
                 extracted_data["has_pool"] = False
+            
+            ai_message = "Văd ceva ce pare a fi un apartament cu 2 dormitoare. Vă rugăm să confirmați tipul de proprietate de mai jos."
+            detected_property_type = "apartment"
+            if "bedrooms" not in extracted_data:
+                extracted_data["bedrooms"] = 2
+            if "has_pool" not in extracted_data:
+                extracted_data["has_pool"] = False
                 
             ai_message = "I see what looks like an apartment with 2 bedrooms. Please confirm the property type below."
         
@@ -316,10 +323,10 @@ async def analyze_batch_images(files: List[UploadFile] = File(...)):
     ```
     """
     if not files:
-        raise HTTPException(status_code=400, detail="No files provided")
+        raise HTTPException(status_code=400, detail="Nu au fost furnizate fișiere")
     
     if len(files) > 10:
-        raise HTTPException(status_code=400, detail="Maximum 10 images allowed per batch")
+        raise HTTPException(status_code=400, detail="Maximum 10 imagini permise per lot")
     
     try:
         # Read all image data
@@ -329,14 +336,14 @@ async def analyze_batch_images(files: List[UploadFile] = File(...)):
             if not file.content_type or not file.content_type.startswith("image/"):
                 raise HTTPException(
                     status_code=400, 
-                    detail=f"File {file.filename} is not an image"
+                    detail=f"Fișierul {file.filename} nu este o imagine"
                 )
             
             image_data = await file.read()
             if len(image_data) == 0:
                 raise HTTPException(
                     status_code=400, 
-                    detail=f"File {file.filename} is empty"
+                    detail=f"Fișierul {file.filename} este gol"
                 )
             
             image_data_list.append(image_data)
@@ -357,10 +364,10 @@ async def analyze_batch_images(files: List[UploadFile] = File(...)):
         
     except VisionModelError as e:
         logger.error(f"Vision model error in batch analysis: {e}")
-        raise HTTPException(status_code=500, detail=f"Image analysis failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Analiza imaginii a eșuat: {str(e)}")
     except Exception as e:
         logger.error(f"Unexpected error in batch analysis: {e}")
-        raise HTTPException(status_code=500, detail=f"Batch analysis failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Analiza lotului a eșuat: {str(e)}")
 
 
 @app.post("/api/listings", response_model=SaveListingResponse)
@@ -380,10 +387,10 @@ def save_listing(request: SaveListingRequest, db: Session = Depends(get_db)):
     try:
         # Validate required fields
         if not request.property_type:
-            raise HTTPException(status_code=400, detail="property_type is required")
+            raise HTTPException(status_code=400, detail="Tipul proprietății este obligatoriu")
         
         if not request.images or len(request.images) == 0:
-            raise HTTPException(status_code=400, detail="At least one image is required")
+            raise HTTPException(status_code=400, detail="Este necesară cel puțin o imagine")
         
         # Create listing
         listing = Listing(
@@ -453,3 +460,26 @@ def save_listing(request: SaveListingRequest, db: Session = Depends(get_db)):
         db.rollback()
         logger.error(f"Error saving listing: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to save listing: {str(e)}")
+
+
+# Romanian error handling
+from fastapi.responses import JSONResponse
+from fastapi import Request
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Return Romanian error messages."""
+    
+    error_messages = {
+        400: "Cerere invalidă",
+        404: "Resursa nu a fost găsită",
+        500: "Eroare internă de server",
+    }
+    
+    detail = error_messages.get(exc.status_code, exc.detail)
+    
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": detail}
+    )
