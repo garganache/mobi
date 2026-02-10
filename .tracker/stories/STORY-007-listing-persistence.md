@@ -157,10 +157,13 @@ Wire up the "Save Listing" button:
 - Handle success/error responses
 - Show confirmation UI
 
-### Phase 4: Testing (Task 4)
+### Phase 4: Testing (Task 4) - **MANDATORY BEFORE PUSH**
 - Unit tests for database models
 - Integration tests for save endpoint
-- E2E test: Complete flow → save → verify in database
+- **E2E tests (Playwright):** Complete flow → save → verify in database
+- **All tests MUST pass locally before git push**
+- Run: `cd frontend && npm run test:e2e`
+- Run: `cd backend && pytest`
 
 ## Tasks
 
@@ -169,7 +172,23 @@ Wire up the "Save Listing" button:
 - **TASK-033:** Wire up frontend "Save Listing" button with backend
 - **TASK-034:** Add listing retrieval endpoint (`GET /api/listings/:id`)
 - **TASK-035:** Add success confirmation UI and "Create Another" flow
-- **TASK-036:** Write tests for complete save flow
+- **TASK-036:** Write E2E tests for complete save flow (**MUST RUN LOCALLY BEFORE PUSH**)
+
+## Testing Requirements (MANDATORY)
+
+**Before ANY git push to main:**
+1. ✅ Backend unit tests pass: `cd backend && pytest`
+2. ✅ Frontend builds: `cd frontend && npm run build`
+3. ✅ E2E tests pass: `cd frontend && npm run test:e2e`
+4. ✅ Manual verification with test images
+
+**E2E Test Coverage Required:**
+- Complete user journey: Upload images → Fill form → Preview → Save
+- Verify listing saved to database
+- Verify all fields persisted correctly
+- Verify images and synthesis data saved
+- Verify success confirmation displayed
+- Test error cases (validation failures, database errors)
 
 ## Dependencies
 
