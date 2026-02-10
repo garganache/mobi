@@ -101,11 +101,26 @@ export const translations = {
     'amenity.garage': 'Garaj',
     'amenity.garden': 'Grădină',
     
+    // Dropdown Options
+    // Garage types
+    'option.No Garage': 'Fără Garaj',
+    'option.Attached': 'Atașat',
+    'option.Detached': 'Detașat',
+    'option.Carport': 'Carport',
+    
+    // Building amenities
+    'option.Gym/Fitness': 'Sală de Sport',
+    'option.Swimming Pool': 'Piscină',
+    'option.Concierge': 'Concierge',
+    'option.Parking': 'Parcare',
+    'option.Storage': 'Depozitare',
+    
     // Buttons
     'button.analyze': 'Analizează',
     'button.analyze_images': 'Analizează {count} Imagine{plural}',
     'button.continue': 'Continuă',
     'button.preview': 'Previzualizare Anunț',
+    'button.preview_listing': 'Previzualizare Anunț',
     'button.save': 'Salvează Anunțul',
     'button.preview_save': 'Previzualizare și Salvare',
     'button.reset': 'Resetează formularul',
@@ -232,4 +247,22 @@ export function getFieldLabel(label: string, fieldId?: string): string {
   
   // Return original if no translation found
   return label;
+}
+
+// Helper for option labels (translates dropdown option labels)
+export function getOptionLabel(label: string): string {
+  const translatedLabel = t(`option.${label}`);
+  if (translatedLabel !== `option.${label}`) {
+    return translatedLabel;
+  }
+  return label;
+}
+
+// Helper to translate options array
+export function translateOptions(options?: Array<{value: string, label: string}>): Array<{value: string, label: string}> | undefined {
+  if (!options) return options;
+  return options.map(opt => ({
+    value: opt.value,
+    label: getOptionLabel(opt.label)
+  }));
 }

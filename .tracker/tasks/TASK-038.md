@@ -1,7 +1,7 @@
 # TASK-038: Update Frontend Components with Romanian Text
 
 **Story:** STORY-008 (Romanian Localization)
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Assigned:** -
 **Effort:** 4 hours
@@ -171,27 +171,27 @@ if (!propertyType) {
 
 ## Acceptance Criteria
 
-- [ ] All visible text uses translation function
-- [ ] No hardcoded English text remains
-- [ ] Property type dropdown shows Romanian labels
-- [ ] Field labels are in Romanian
-- [ ] Button text is in Romanian
-- [ ] Error messages are in Romanian
-- [ ] Room names display in Romanian
-- [ ] Amenity names display in Romanian
-- [ ] App builds without errors
-- [ ] Visual regression test passes
+- [x] All visible text uses translation function
+- [x] No hardcoded English text remains
+- [x] Property type dropdown shows Romanian labels
+- [x] Field labels are in Romanian
+- [x] Button text is in Romanian
+- [x] Error messages are in Romanian
+- [x] Room names display in Romanian
+- [x] Amenity names display in Romanian
+- [x] App builds without errors
+- [x] Visual regression test passes
 
 ## Testing Checklist
 
-- [ ] Open app - all text in Romanian
-- [ ] Upload image - messages in Romanian
-- [ ] See form - labels in Romanian
-- [ ] Click buttons - text in Romanian
-- [ ] See errors - messages in Romanian
-- [ ] Property type dropdown - options in Romanian
-- [ ] Preview page - all text in Romanian
-- [ ] Success modal - text in Romanian
+- [x] Open app - all text in Romanian
+- [x] Upload image - messages in Romanian
+- [x] See form - labels in Romanian
+- [x] Click buttons - text in Romanian
+- [x] See errors - messages in Romanian
+- [x] Property type dropdown - options in Romanian
+- [x] Preview page - all text in Romanian
+- [x] Success modal - text in Romanian
 
 ## Notes
 

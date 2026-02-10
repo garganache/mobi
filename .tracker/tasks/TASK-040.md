@@ -1,7 +1,7 @@
 # TASK-040: Update Property Type Dropdown Options
 
 **Story:** STORY-008 (Romanian Localization)
-**Status:** todo
+**Status:** in_progress
 **Priority:** medium
 **Assigned:** -
 **Effort:** 1 hour
@@ -114,6 +114,13 @@ def _get_property_type_field(self) -> Dict:
         ]
     }
 ```
+
+## Blocker
+Cannot proceed with TASK-040 until TASK-037 (Create i18n Infrastructure) is completed. TASK-040 depends on the translation helpers (`t`, `getPropertyTypeLabel`) that will be created in TASK-037.
+
+## Implementation
+
+The i18n infrastructure from TASK-037 is now complete. The translation helpers are available at `frontend/src/lib/i18n/index.ts`.
 
 ## Acceptance Criteria
 

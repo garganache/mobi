@@ -1,7 +1,7 @@
 # TASK-037: Create i18n Infrastructure
 
 **Story:** STORY-008 (Romanian Localization)
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Assigned:** -
 **Effort:** 3 hours
@@ -134,12 +134,12 @@ export interface I18nConfig {
 
 ## Acceptance Criteria
 
-- [ ] Translation file created with all Romanian strings
-- [ ] Translation function `t()` works correctly
-- [ ] Helper functions for property types, rooms, amenities
-- [ ] Type definitions created
-- [ ] No TypeScript errors
-- [ ] Can import and use in components
+- [x] Translation file created with all Romanian strings
+- [x] Translation function `t()` works correctly
+- [x] Helper functions for property types, rooms, amenities
+- [x] Type definitions created
+- [x] No TypeScript errors
+- [x] Can import and use in components
 
 ## Testing
 

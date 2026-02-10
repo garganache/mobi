@@ -1,7 +1,7 @@
 # TASK-039: Backend Romanian AI Messages
 
 **Story:** STORY-008 (Romanian Localization)
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Assigned:** -
 **Effort:** 3 hours
