@@ -212,14 +212,19 @@
 
   function resetForm() {
     if (confirm('Are you sure you want to reset the form? This will clear all data.')) {
+      console.log('🔄 Resetting form...');
       listingStore.reset();
       formSchema = [];
-      aiMessage = '';
+      aiMessage = 'Drop a photo to start your listing';
       currentStep = 0;
       completionPercentage = 0;
       showPreview = false;
       uploadedImages = [];
+      synthesisData = null;
+      individualAnalyses = [];
+      error = null;
       localStorage.removeItem('mobi_listing_state');
+      console.log('✅ Form reset complete');
     }
   }
 
