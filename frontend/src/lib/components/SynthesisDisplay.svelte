@@ -53,16 +53,16 @@
           </div>
           <div class="overview-text">
             <h3>Property Overview</h3>
-            <p>{synthesis.total_rooms || 0} rooms analyzed</p>
+            <p>{individualAnalyses?.length || 0} {individualAnalyses?.length === 1 ? 'image' : 'images'} analyzed</p>
           </div>
         </div>
         
         {#if synthesis.room_breakdown}
           <div class="room-summary">
+            <p class="rooms-detected-label">Rooms detected in images:</p>
             {#each Object.entries(synthesis.room_breakdown) as [roomType, count]}
               <div class="room-item">
                 <span class="room-icon">{getRoomIcon(roomType)}</span>
-                <span class="room-count">{count}</span>
                 <span class="room-name">{formatRoomName(roomType)}</span>
               </div>
             {/each}
@@ -205,37 +205,36 @@
   }
 
   .room-summary {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 1rem;
     margin-top: 1rem;
   }
 
-  .room-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 1rem;
-    background: #f9fafb;
-    border-radius: 8px;
-    border: 1px solid #e5e7eb;
+  .rooms-detected-label {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin: 0 0 0.75rem 0;
+    font-weight: 500;
   }
 
-  .room-icon {
-    font-size: 1.5rem;
+  .room-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: #f9fafb;
+    border-radius: 20px;
+    border: 1px solid #e5e7eb;
+    margin-right: 0.5rem;
     margin-bottom: 0.5rem;
   }
 
-  .room-count {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #1f2937;
+  .room-icon {
+    font-size: 1.25rem;
   }
 
   .room-name {
     font-size: 0.875rem;
-    color: #6b7280;
-    margin-top: 0.25rem;
+    color: #374151;
+    font-weight: 500;
   }
 
   .unified-description {
