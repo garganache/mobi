@@ -1,6 +1,6 @@
 <script lang="ts">
   import { fade } from 'svelte/transition';
-  import { t } from '../i18n';
+  import { t, getAmenityLabel, getRoomLabel } from '../i18n';
   
   export let listingData: Record<string, any>;
   export let synthesis: any = null;
@@ -8,6 +8,15 @@
   export let onEdit: () => void;
   export let onSubmit: () => void;
   export let individualAnalyses: any[] = [];
+  
+  // Debug: log images when component receives them
+  $: {
+    console.log('📷 ListingPreview received images:', images);
+    console.log('   - images.length:', images.length);
+    if (images.length > 0) {
+      console.log('   - first image:', images[0].substring(0, 100));
+    }
+  }
 
   // State for save functionality
   let isSubmitting = false;
@@ -115,7 +124,7 @@
     // Add amenities narrative
     if (synthesis?.property_overview?.common_amenities?.length > 0) {
       const amenities = synthesis.property_overview.common_amenities.map((amenity: string) => 
-        amenity.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+        getAmenityLabel(amenity)
       );
       desc += `\n\nAmenities include: ${amenities.join(', ')}.`;
     }
@@ -261,7 +270,7 @@
           <h3>{t('header.features_amenities', 'ro')}</h3>
           <ul class="amenity-list">
             {#each (synthesis.property_overview.common_amenities || []) as amenity}
-              <li>{amenity.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</li>
+              <li>{getAmenityLabel(amenity)}</li>
             {/each}
           </ul>
         </div>
@@ -273,7 +282,7 @@
           <h3>{t('header.room_breakdown', 'ro')}</h3>
           <ul>
             {#each Object.entries(synthesis.room_breakdown) as [room, count]}
-              <li>{count}x {room.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</li>
+              <li>{count}x {getRoomLabel(room)}</li>
             {/each}
           </ul>
         </div>

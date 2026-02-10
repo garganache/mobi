@@ -100,6 +100,20 @@ export const translations = {
     'amenity.pool': 'Piscină',
     'amenity.garage': 'Garaj',
     'amenity.garden': 'Grădină',
+    'amenity.large_windows': 'Ferestre Mari',
+    'amenity.radiators': 'Radiatoare',
+    'amenity.decorative_ceiling': 'Tavan Decorativ',
+    'amenity.glass_panel_doors': 'Uși cu Panouri de Sticlă',
+    'amenity.skylights': 'Ferestre de Mansardă',
+    'amenity.stainless_steel': 'Aparate din Oțel Inoxidabil',
+    'amenity.closet': 'Dulap',
+    'amenity.window': 'Fereastră',
+    'amenity.balcony': 'Balcon',
+    'amenity.patio': 'Patio',
+    'amenity.deck': 'Terasă',
+    'amenity.front_porch': 'Pridvor Frontal',
+    'amenity.landscaping': 'Peisagistică',
+    'amenity.landscape': 'Peisagistică',
     
     // Dropdown Options
     // Garage types
