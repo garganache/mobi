@@ -1,6 +1,7 @@
 <script lang="ts">
   import { fade, slide } from 'svelte/transition';
   import { ChevronDown, ChevronUp, Home, Grid, CheckCircle } from 'lucide-svelte';
+  import { t, getRoomLabel, getAmenityLabel } from '../i18n';
 
   export let synthesis: any = null;
   export let individualAnalyses: any[] = [];
@@ -15,17 +16,11 @@
   $: console.log('SynthesisDisplay individualAnalyses:', individualAnalyses);
 
   function formatRoomName(roomType: string): string {
-    return roomType
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+    return getRoomLabel(roomType);
   }
 
   function formatAmenity(amenity: string): string {
-    return amenity
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+    return getAmenityLabel(amenity);
   }
 
   function getRoomIcon(roomType: string): string {
@@ -52,14 +47,19 @@
             <Home size={24} />
           </div>
           <div class="overview-text">
-            <h3>Property Overview</h3>
-            <p>{individualAnalyses?.length || 0} {individualAnalyses?.length === 1 ? 'image' : 'images'} analyzed</p>
+            <h3>{t('header.property_overview')}</h3>
+            <p>
+              {individualAnalyses?.length || 0} 
+              {individualAnalyses?.length === 1 
+                ? t('message.image_analyzed') 
+                : t('message.images_analyzed')}
+            </p>
           </div>
         </div>
         
         {#if synthesis.room_breakdown}
           <div class="room-summary">
-            <p class="rooms-detected-label">Rooms detected in images:</p>
+            <p class="rooms-detected-label">{t('message.rooms_detected')}:</p>
             {#each Object.entries(synthesis.room_breakdown) as [roomType, count]}
               <div class="room-item">
                 <span class="room-icon">{getRoomIcon(roomType)}</span>
@@ -73,14 +73,14 @@
 
     {#if synthesis.unified_description}
       <div class="unified-description">
-        <h4>Description</h4>
+        <h4>{t('header.description')}</h4>
         <p>{synthesis.unified_description}</p>
       </div>
     {/if}
 
     {#if synthesis.amenities_by_room && Object.keys(synthesis.amenities_by_room).length > 0}
       <div class="amenities-section">
-        <h4>Amenities by Room</h4>
+        <h4>{t('header.amenities_by_room')}</h4>
         <div class="amenities-grid">
           {#each Object.entries(synthesis.amenities_by_room) as [roomName, amenities]}
             <div class="room-amenities">
@@ -107,8 +107,8 @@
         >
           <Grid size={16} />
           <span class="toggle-text">
-            {showIndividualAnalyses ? 'Hide' : 'Show'} 
-            Individual Room Analyses ({individualAnalyses.length} images)
+            {showIndividualAnalyses ? t('button.hide') : t('button.show')} 
+            Individual Room Analyses ({individualAnalyses.length} {individualAnalyses.length === 1 ? 'imagine' : 'imagini'})
           </span>
           {#if showIndividualAnalyses}
             <ChevronUp size={16} />
@@ -123,7 +123,7 @@
           {#each individualAnalyses as analysis, index}
             <div class="analysis-card" in:fade={{ duration: 300, delay: index * 50 }}>
               <div class="analysis-header">
-                <h5>Image {index + 1}</h5>
+                <h5>{t('label.image')} {index + 1}</h5>
                 {#if analysis.property_type}
                   <span class="property-type-tag">{formatRoomName(analysis.property_type)}</span>
                 {/if}
@@ -135,7 +135,7 @@
 
               {#if analysis.rooms}
                 <div class="analysis-rooms">
-                  <strong>Rooms:</strong>
+                  <strong>{t('label.rooms')}:</strong>
                   {#each Object.entries(analysis.rooms) as [roomType, count]}
                     <span class="room-badge">{formatRoomName(roomType)}: {count}</span>
                   {/each}
@@ -144,7 +144,7 @@
 
               {#if analysis.amenities && analysis.amenities.length > 0}
                 <div class="analysis-amenities">
-                  <strong>Amenities:</strong>
+                  <strong>{t('label.amenities')}:</strong>
                   <div class="amenity-tags">
                     {#each analysis.amenities as amenity}
                       <span class="amenity-tag">{formatAmenity(amenity)}</span>

@@ -4,6 +4,7 @@
   import { flip } from 'svelte/animate';
   import { getComponent } from './fields/registry';
   import { listingStore } from '../stores/listingStore';
+  import { t } from '../i18n';
   import type { FieldValue } from '../stores/listingStore';
 
   /**
@@ -84,6 +85,37 @@
   // Check if a field is newly added
   function isNewField(fieldId: string): boolean {
     return newFieldIds.has(fieldId);
+  }
+
+  // Field validation function
+  function validateField(field: any, value: any): string | null {
+    if (field.required && !value && value !== 0) {
+      return t('error.field_required', { field: field.label });
+    }
+    
+    if (field.type === 'number' && value !== null && value !== '' && isNaN(Number(value))) {
+      return t('error.invalid_number');
+    }
+    
+    if (field.type === 'email' && value && !isValidEmail(value)) {
+      return t('error.invalid_email');
+    }
+    
+    if (field.min !== undefined && value !== null && value !== '' && Number(value) < field.min) {
+      return t('error.min_value', { min: field.min });
+    }
+    
+    if (field.max !== undefined && value !== null && value !== '' && Number(value) > field.max) {
+      return t('error.max_value', { max: field.max });
+    }
+    
+    return null;
+  }
+
+  // Email validation helper
+  function isValidEmail(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   }
 
   // Custom transition for field entrance
@@ -167,8 +199,8 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
         </svg>
       </div>
-      <p>Ready to help you create your listing</p>
-      <small>Upload an image or start filling in details to get started</small>
+      <p>{t('message.ready_to_help', 'ro')}</p>
+      <small>{t('message.upload_or_start', 'ro')}</small>
     </div>
   {/if}
 </div>

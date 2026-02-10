@@ -49,7 +49,8 @@ def test_analyze_step_with_image_input():
         first_field = data["ui_schema"][0]
         assert first_field["id"] == "property_type"
         assert first_field["component_type"] == "select"
-        assert first_field["label"] == "Property Type"
+        # Label now in Romanian: "Tipul Proprietății" instead of "Property Type"
+        assert first_field["label"] in ["Property Type", "Tipul Proprietății"]
         assert len(first_field["options"]) >= 3  # At least 3 options
         # Should have a default value set from AI detection
         assert first_field.get("default") is not None

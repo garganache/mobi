@@ -2,6 +2,7 @@
   import { createEventDispatcher } from 'svelte';
   import { fade, scale } from 'svelte/transition';
   import { flip } from 'svelte/animate';
+  import { t } from '../i18n';
   import VisionAnalysisDisplay from './VisionAnalysisDisplay.svelte';
 
   export let maxFileSize = 10 * 1024 * 1024; // 10MB
@@ -311,8 +312,8 @@
       <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
       </svg>
-      <h3>Upload Property {multiple ? 'Images' : 'Image'}</h3>
-      <p>Drag and drop your {multiple ? 'images' : 'image'} here, or <label class="browse-link">
+      <h3>{t('header.upload_property_images', 'ro')}</h3>
+      <p>{t('message.drag_drop_or', 'ro')} <label class="browse-link">
         <input
           type="file"
           accept={acceptedTypes.join(',')}
@@ -320,11 +321,11 @@
           on:change={handleFileInput}
           class="hidden-input"
         />
-        browse
+        {t('button.browse', 'ro')}
       </label></p>
-      <small>Supports: {acceptedTypes.map(t => t.split('/')[1]).join(', ')} (max {maxFileSize / (1024 * 1024)}MB{multiple ? ' each' : ''})</small>
+      <small>{t('message.supports_format', 'ro')}: {acceptedTypes.map(t => t.split('/')[1]).join(', ')} ({t('message.max_size', 'ro')}: {maxFileSize / (1024 * 1024)}MB{multiple ? ' ' + t('message.each', 'ro') : ''})</small>
       {#if multiple && uploads.length > 0}
-        <button class="clear-all-btn" on:click={clearAll}>Clear All ({uploads.length})</button>
+        <button class="clear-all-btn" on:click={clearAll}>{t('button.clear_all', 'ro')} ({uploads.length})</button>
       {/if}
     </div>
   </div>

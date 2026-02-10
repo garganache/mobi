@@ -8,6 +8,7 @@
   import ListingPreview from './lib/components/ListingPreview.svelte';
   import { listingStore } from './lib/stores/listingStore';
   import type { FieldSchema } from './lib/components/AnimatedDynamicForm.svelte';
+  import { t } from './lib/i18n';
 
   interface AnalyzeStepResponse {
     extracted_data: Record<string, any>;
@@ -19,7 +20,7 @@
 
   let currentStep = 0;
   let completionPercentage = 0;
-  let aiMessage = 'Drop a photo to start your listing';
+  let aiMessage = t('message.drop_photo');
   let formSchema: FieldSchema[] = [];
   let isLoading = false;
   let error: string | null = null;
@@ -131,15 +132,15 @@
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: 'Analysis failed' }));
-        throw new Error(errorData.detail || 'Analysis failed');
+        const errorData = await response.json().catch(() => ({ detail: t('error.analysis_failed') }));
+        throw new Error(errorData.detail || t('error.analysis_failed'));
       }
 
       const result = await response.json();
       await handleAnalyzeResponse(result);
 
     } catch (err) {
-      error = err instanceof Error ? err.message : 'Analysis failed';
+      error = err instanceof Error ? err.message : t('error.analysis_failed');
       console.error('Analysis error:', err);
     } finally {
       isLoading = false;
@@ -238,11 +239,12 @@
   }
 
   function resetForm() {
-    if (confirm('Are you sure you want to reset the form? This will clear all data.')) {
+    const message = `${t('confirm.reset_form')}\n${t('confirm.clear_data')}`;
+    if (confirm(message)) {
       console.log('🔄 Resetting form...');
       listingStore.reset();
       formSchema = [];
-      aiMessage = 'Drop a photo to start your listing';
+      aiMessage = t('message.drop_photo');
       currentStep = 0;
       completionPercentage = 0;
       showPreview = false;
@@ -268,13 +270,13 @@
     const listingData = listingStore.toJSON();
     if (!listingData.property_type) {
       console.error('ERROR: property_type is missing!');
-      error = 'Please select a property type before previewing';
+      error = t('error.property_type_required');
       return;
     }
     
     if (uploadedImages.length === 0) {
       console.error('ERROR: No images uploaded!');
-      error = 'Please upload at least one image before previewing';
+      error = t('error.images_required');
       return;
     }
     
@@ -301,7 +303,7 @@
 
 <main>
   <header class="app-header">
-    <h1>Mobi Property Listing</h1>
+    <h1>{t('header.app_title', 'ro')}</h1>
     <div class="header-actions">
       {#if completionPercentage > 0 && !showPreview}
         <div class="progress-indicator">
@@ -353,8 +355,8 @@
         <!-- Initial state - show image upload -->
         <div class="initial-upload" in:fade={{ duration: 500 }}>
           <div class="upload-section">
-            <h2>Get Started</h2>
-            <p>Upload an image of your property to begin creating your listing</p>
+            <h2>{t('header.get_started', 'ro')}</h2>
+            <p>{t('message.upload_to_begin', 'ro')}</p>
             <ImageUpload 
               on:uploadSuccess={handleImageUpload}
               on:batchUploadSuccess={handleBatchUpload}
@@ -390,7 +392,7 @@
                 }
               }}
             >
-              {isLoading ? 'Processing...' : completionPercentage >= 100 ? 'Preview Listing' : 'Continue'}
+              {isLoading ? t('button.processing', 'ro') : completionPercentage >= 100 ? t('button.preview_listing', 'ro') : t('button.continue', 'ro')}
             </button>
             
             {#if listingStore.toJSON().property_type && uploadedImages.length > 0 && completionPercentage < 100}
@@ -404,7 +406,7 @@
                   handleFormComplete();
                 }}
               >
-                Preview & Save
+                {t('button.preview_save', 'ro')}
               </button>
             {/if}
           </div>
@@ -413,8 +415,8 @@
         <!-- Completion state - show preview button when no more fields -->
         <div class="completion-state" in:fade={{ duration: 500 }}>
           <div class="completion-message">
-            <h2>✓ Listing Complete!</h2>
-            <p>You've filled in all the required information. Ready to preview and save your listing?</p>
+            <h2>✓ {t('message.listing_complete', 'ro')}</h2>
+            <p>{t('message.ready_to_preview', 'ro')}</p>
           </div>
           
           <div class="actions-section">
@@ -428,7 +430,7 @@
                 handleFormComplete();
               }}
             >
-              Preview Listing
+              {t('button.preview_listing', 'ro')}
             </button>
           </div>
         </div>

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { fade } from 'svelte/transition';
+  import { t } from '../i18n';
   
   export let listingData: Record<string, any>;
   export let synthesis: any = null;
@@ -134,12 +135,12 @@
       desc = desc.slice(0, -1) + '.'; // Remove trailing comma and add period
     }
     
-    return desc.trim() || 'A beautiful property ready for you to call home.';
+    return desc.trim() || t('message.beautiful_property_ready', 'ro');
   }
 
   // Format currency for price
   function formatPrice(price: any): string {
-    if (!price) return 'Not specified';
+    if (!price) return t('message.not_specified', 'ro');
     const numPrice = typeof price === 'string' ? parseFloat(price.replace(/[^\d.]/g, '')) : price;
     if (isNaN(numPrice)) return price;
     return new Intl.NumberFormat('en-US', {
@@ -158,17 +159,17 @@
         return analysis.description;
       }
     }
-    return `Property image ${index + 1}`;
+    return `${t('label.property_image', 'ro')} ${index + 1}`;
   }
 
   // Group form fields by category for better organization
   function organizeFormData() {
     const categories = {
-      'Basic Information': {},
-      'Location & Address': {},
-      'Property Features': {},
-      'Financial Details': {},
-      'Additional Information': {}
+      [t('category.basic_info', 'ro')]: {},
+      [t('category.location_address', 'ro')]: {},
+      [t('category.property_features', 'ro')]: {},
+      [t('category.financial_details', 'ro')]: {},
+      [t('category.additional_info', 'ro')]: {}
     };
 
     Object.entries(listingData).forEach(([key, value]) => {
@@ -177,15 +178,15 @@
       const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       
       if (['address', 'city', 'state', 'zip_code', 'neighborhood'].includes(key)) {
-        categories['Location & Address'][formattedKey] = value;
+        categories[t('category.location_address', 'ro')][formattedKey] = value;
       } else if (['price', 'deposit', 'hoa_fees', 'property_tax'].includes(key)) {
-        categories['Financial Details'][formattedKey] = key === 'price' ? formatPrice(value) : value;
+        categories[t('category.financial_details', 'ro')][formattedKey] = key === 'price' ? formatPrice(value) : value;
       } else if (['bedrooms', 'bathrooms', 'square_footage', 'lot_size', 'year_built', 'parking_spaces'].includes(key)) {
-        categories['Property Features'][formattedKey] = value;
+        categories[t('category.property_features', 'ro')][formattedKey] = value;
       } else if (['description', 'title', 'listing_type'].includes(key)) {
-        categories['Basic Information'][formattedKey] = value;
+        categories[t('category.basic_info', 'ro')][formattedKey] = value;
       } else {
-        categories['Additional Information'][formattedKey] = value;
+        categories[t('category.additional_info', 'ro')][formattedKey] = value;
       }
     });
 
@@ -199,18 +200,18 @@
 <div class="listing-preview">
   <!-- Hero Section: Main image + title -->
   <div class="preview-hero">
-    <h1>Your Listing Preview</h1>
-    <p class="subtitle">Review everything before publishing</p>
+    <h1>{t('header.preview_listing', 'ro')}</h1>
+    <p class="subtitle">{t('message.review_before_publish', 'ro')}</p>
     {#if listingData.property_type || listingData.title}
       <h2 class="property-title">
-        {listingData.title || `${listingData.property_type} Listing`}
+        {listingData.title || `${listingData.property_type} ${t('header.listing', 'ro')}`}
       </h2>
     {/if}
   </div>
 
   <!-- Property Description -->
   <section class="description-section">
-    <h2>Property Description</h2>
+    <h2>{t('header.property_description', 'ro')}</h2>
     <div class="generated-description">
       {generateDescription()}
     </div>
@@ -219,7 +220,7 @@
   <!-- Image Gallery -->
   {#if images.length > 0}
     <section class="images-section">
-      <h2>Property Images ({images.length})</h2>
+      <h2>{t('header.property_images', 'ro')} ({images.length})</h2>
       <div class="image-grid">
         {#each images as image, i}
           <div class="preview-image">
@@ -235,20 +236,20 @@
 
   <!-- Property Details -->
   <section class="details-section">
-    <h2>Property Details</h2>
+    <h2>{t('header.property_details', 'ro')}</h2>
     <div class="details-grid">
       <!-- Basic Info -->
       <div class="detail-category">
-        <h3>Basic Information</h3>
+        <h3>{t('header.basic_info', 'ro')}</h3>
         <dl>
-          <dt>Property Type:</dt>
-          <dd>{listingData.property_type || 'Not specified'}</dd>
+          <dt>{t('field.property_type', 'ro')}:</dt>
+          <dd>{listingData.property_type || t('message.not_specified', 'ro')}</dd>
           {#if listingData.price}
-            <dt>Price:</dt>
+            <dt>{t('field.price', 'ro')}:</dt>
             <dd>{formatPrice(listingData.price)}</dd>
           {/if}
           {#if listingData.title}
-            <dt>Title:</dt>
+            <dt>{t('field.title', 'ro')}:</dt>
             <dd>{listingData.title}</dd>
           {/if}
         </dl>
@@ -257,7 +258,7 @@
       <!-- Features & Amenities -->
       {#if synthesis?.property_overview?.common_amenities?.length > 0}
         <div class="detail-category">
-          <h3>Features & Amenities</h3>
+          <h3>{t('header.features_amenities', 'ro')}</h3>
           <ul class="amenity-list">
             {#each (synthesis.property_overview.common_amenities || []) as amenity}
               <li>{amenity.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</li>
@@ -269,7 +270,7 @@
       <!-- Room Breakdown -->
       {#if synthesis?.room_breakdown && Object.keys(synthesis.room_breakdown).length > 0}
         <div class="detail-category">
-          <h3>Room Breakdown</h3>
+          <h3>{t('header.room_breakdown', 'ro')}</h3>
           <ul>
             {#each Object.entries(synthesis.room_breakdown) as [room, count]}
               <li>{count}x {room.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</li>
@@ -298,7 +299,7 @@
   <!-- Actions -->
   <div class="preview-actions">
     <button class="btn-secondary" on:click={onEdit} disabled={isSubmitting}>
-      ← Edit Listing
+      ← {t('button.edit', 'ro')} {t('header.listing', 'ro')}
     </button>
     <button 
       class="btn-primary" 
@@ -307,9 +308,9 @@
     >
       {#if isSubmitting}
         <span class="spinner"></span>
-        Saving...
+        {t('button.saving', 'ro')}...
       {:else}
-        Publish Listing →
+        {t('button.publish_listing', 'ro')} →
       {/if}
     </button>
   </div>
@@ -323,16 +324,16 @@
   {#if showSuccessModal}
     <div class="success-modal" transition:fade>
       <div class="modal-content">
-        <h2>✅ Listing Saved Successfully!</h2>
-        <p>Your property listing has been saved.</p>
-        <p class="listing-id">Listing ID: #{savedListingId}</p>
+        <h2>✅ {t('success.listing_saved', 'ro')}!</h2>
+        <p>{t('message.listing_has_been_saved', 'ro')}</p>
+        <p class="listing-id">{t('label.listing_id', 'ro')}: #{savedListingId}</p>
         
         <div class="modal-actions">
           <button class="btn-secondary" on:click={() => window.location.href = '/'}>
-            Create Another Listing
+            {t('button.create_another', 'ro')}
           </button>
           <button class="btn-primary" on:click={() => window.location.href = `/listings/${savedListingId}`}>
-            View Listing
+            {t('button.view_listing', 'ro')}
           </button>
         </div>
       </div>
