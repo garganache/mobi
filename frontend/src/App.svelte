@@ -41,6 +41,23 @@
     }
   }
 
+  // Debug: Watch UI state
+  $: {
+    if (formSchema.length === 0 && uploadedImages.length === 0) {
+      console.log('📤 UI State: INITIAL (showing upload)');
+    } else if (formSchema.length > 0) {
+      console.log('📝 UI State: FORM (showing fields + buttons)');
+    } else if (uploadedImages.length > 0 && completionPercentage >= 100) {
+      console.log('🎉 UI State: COMPLETION (showing preview button)');
+    } else {
+      console.log('⚠️ UI State: UNKNOWN', {
+        formSchemaLength: formSchema.length,
+        uploadedImagesLength: uploadedImages.length,
+        completionPercentage
+      });
+    }
+  }
+
   // Load saved state on mount
   onMount(() => {
     console.log('🚀 App mounted');
@@ -282,7 +299,7 @@
         </div>
       {/if}
 
-      {#if formSchema.length === 0}
+      {#if formSchema.length === 0 && uploadedImages.length === 0}
         <!-- Initial state - show image upload -->
         <div class="initial-upload" in:fade={{ duration: 500 }}>
           <div class="upload-section">
@@ -296,7 +313,7 @@
             />
           </div>
         </div>
-      {:else}
+      {:else if formSchema.length > 0}
         <!-- Progressive form -->
         <div class="progressive-form" in:fade={{ duration: 500 }}>
           <div class="form-container">
@@ -340,6 +357,29 @@
                 Preview & Save
               </button>
             {/if}
+          </div>
+        </div>
+      {:else if uploadedImages.length > 0 && completionPercentage >= 100}
+        <!-- Completion state - show preview button when no more fields -->
+        <div class="completion-state" in:fade={{ duration: 500 }}>
+          <div class="completion-message">
+            <h2>✓ Listing Complete!</h2>
+            <p>You've filled in all the required information. Ready to preview and save your listing?</p>
+          </div>
+          
+          <div class="actions-section">
+            <button 
+              type="button"
+              class="submit-button"
+              disabled={isLoading}
+              on:click={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleFormComplete();
+              }}
+            >
+              Preview Listing
+            </button>
           </div>
         </div>
       {/if}
@@ -463,6 +503,24 @@
 
   .upload-section p {
     color: #6b7280;
+    margin-bottom: 2rem;
+  }
+
+  .completion-state {
+    text-align: center;
+    padding: 3rem 0;
+  }
+
+  .completion-message h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #10b981;
+    margin-bottom: 1rem;
+  }
+
+  .completion-message p {
+    color: #6b7280;
+    font-size: 1.125rem;
     margin-bottom: 2rem;
   }
 
