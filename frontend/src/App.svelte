@@ -34,8 +34,10 @@
       console.log('🔵 showPreview changed to TRUE');
       console.log('  - listingData:', listingStore.toJSON());
       console.log('  - images:', uploadedImages.length);
+      console.trace('Stack trace for showPreview = TRUE');
     } else {
       console.log('🔴 showPreview changed to FALSE');
+      console.trace('Stack trace for showPreview = FALSE');
     }
   }
 
@@ -188,6 +190,7 @@
 
   function handleFormComplete() {
     console.log('=== handleFormComplete called ===');
+    console.trace('handleFormComplete stack trace');
     console.log('listingData:', listingStore.toJSON());
     console.log('synthesisData:', synthesisData);
     console.log('uploadedImages:', uploadedImages);
@@ -241,7 +244,7 @@
           </div>
         </div>
       {/if}
-      <button class="reset-button" on:click={resetForm} title="Reset form">
+      <button type="button" class="reset-button" on:click={resetForm} title="Reset form">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
         </svg>
@@ -307,9 +310,12 @@
 
           <div class="actions-section">
             <button 
+              type="button"
               class="submit-button"
               disabled={isLoading}
-              on:click={() => {
+              on:click={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 if (completionPercentage >= 100) {
                   handleFormComplete();
                 } else {
@@ -322,9 +328,14 @@
             
             {#if listingStore.toJSON().property_type && uploadedImages.length > 0 && completionPercentage < 100}
               <button 
+                type="button"
                 class="preview-button"
                 disabled={isLoading}
-                on:click={() => handleFormComplete()}
+                on:click={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleFormComplete();
+                }}
               >
                 Preview & Save
               </button>
@@ -341,7 +352,7 @@
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
           {error}
-          <button class="dismiss-error" on:click={() => error = null}>×</button>
+          <button type="button" class="dismiss-error" on:click={() => error = null}>×</button>
         </div>
       {/if}
     </div>
