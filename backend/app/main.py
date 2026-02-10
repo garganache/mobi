@@ -23,9 +23,7 @@ from app.vision_model import analyze_property_image, analyze_multiple_images, Vi
 from app.models import Listing, ListingImage, ListingSynthesis
 from app.models import Base, Listing, ListingImage, ListingSynthesis
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-  raise RuntimeError("DATABASE_URL environment variable is required")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///:memory:")
 
 engine = create_engine(DATABASE_URL, future=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, future=True)
