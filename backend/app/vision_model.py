@@ -591,33 +591,48 @@ def synthesize_property_overview(analyses: list[dict]) -> dict:
         interior_amenities.update(amenities)
         interior_materials.update(materials)
     
-    # Aggregate room counts across interior images only
-    total_rooms = 0
-    room_breakdown = {}
-    amenities_by_room = {}
+    # Fix for open-concept counting: if detected and only 1 interior image, treat as 1 room
     property_types = []
     styles = []
     
-    # Process interior analyses only for room counting
-    for i, analysis in enumerate(interior_analyses):
-        room_key = f"room_{i+1}"
+    if open_concept_detected and len(interior_analyses) == 1:
+        # Single image with multiple functional areas = open concept studio
+        total_rooms = 1
+        room_breakdown = {"open_concept_space": 1}
         
-        # Count rooms from this analysis
-        if analysis.get("rooms"):
-            for room_type, count in analysis["rooms"].items():
-                room_breakdown[room_type] = room_breakdown.get(room_type, 0) + count
-                total_rooms += count
+        # Still track what functional areas it has for description
+        original_rooms = interior_analyses[0].get("rooms", {})
+        functional_areas = list(original_rooms.keys())
         
-        # Collect amenities for this room
-        room_amenities = analysis.get("amenities", [])
-        if room_amenities:
-            amenities_by_room[room_key] = room_amenities
+        # Collect property types and styles from the single interior analysis
+        if interior_analyses[0].get("property_type"):
+            property_types.append(interior_analyses[0]["property_type"])
+        if interior_analyses[0].get("style"):
+            styles.append(interior_analyses[0]["style"])
+    else:
+        # Normal room counting for traditional layout or multiple images
+        total_rooms = 0
+        room_breakdown = {}
         
-        # Collect property types and styles
-        if analysis.get("property_type"):
-            property_types.append(analysis["property_type"])
-        if analysis.get("style"):
-            styles.append(analysis["style"])
+        # Aggregate room counts across interior images only
+        for i, analysis in enumerate(interior_analyses):
+            room_key = f"room_{i+1}"
+            
+            # Count rooms from this analysis
+            if analysis.get("rooms"):
+                for room_type, count in analysis["rooms"].items():
+                    room_breakdown[room_type] = room_breakdown.get(room_type, 0) + count
+                    total_rooms += count
+            
+            # Collect property types and styles
+            if analysis.get("property_type"):
+                property_types.append(analysis["property_type"])
+            if analysis.get("style"):
+                styles.append(analysis["style"])
+    
+    amenities_by_room = {}
+    property_types = []
+    styles = []
     
     # Handle exterior features separately
     exterior_features = []
@@ -641,16 +656,55 @@ def synthesize_property_overview(analyses: list[dict]) -> dict:
     
     # Add specific exterior amenities as features
     for amenity in exterior_amenities:
-        if amenity in ['garage', 'garden', 'pool', 'balcony', 'patio', 'deck']:
+        if amenity in ['garage', 'garden', 'pool', 'balcony', 'patio', 'deck', 'front_porch', 'landscaping', 'landscape']:
             exterior_features.append(amenity.replace('_', ' '))
+    
+    # Also add generic features if specific ones aren't found but description suggests them
+    if not exterior_features and exterior_analyses:
+        for analysis in exterior_analyses:
+            description = analysis.get("description", "").lower()
+            if any(word in description for word in ['porch', 'patio', 'deck', 'balcony']):
+                if 'outdoor living space' not in exterior_features:
+                    exterior_features.append('outdoor living space')
+            if any(word in description for word in ['garden', 'landscaped', 'yard', 'landscaping']):
+                if 'landscaping' not in exterior_features:
+                    exterior_features.append('landscaping')
+            if any(word in description for word in ['garage', 'driveway', 'parking']):
+                if 'parking' not in exterior_features:
+                    exterior_features.append('parking')
     
     # Determine layout type
     layout_type = "open_concept" if open_concept_detected else "traditional"
     
     # Determine dominant property type and style from all analyses
     all_analyses = interior_analyses + exterior_analyses
-    dominant_property_type = max(set(property_types), key=property_types.count) if property_types else "unknown"
-    dominant_style = max(set(styles), key=styles.count) if styles else "unknown"
+    
+    # Better property type detection - prioritize from interior if available
+    if property_types:
+        dominant_property_type = max(set(property_types), key=property_types.count)
+    elif all_analyses:
+        # Fallback to any available property type
+        for analysis in all_analyses:
+            if analysis.get("property_type"):
+                dominant_property_type = analysis["property_type"]
+                break
+        else:
+            dominant_property_type = "unknown"
+    else:
+        dominant_property_type = "unknown"
+    
+    if styles:
+        dominant_style = max(set(styles), key=styles.count)
+    elif all_analyses:
+        # Fallback to any available style
+        for analysis in all_analyses:
+            if analysis.get("style"):
+                dominant_style = analysis["style"]
+                break
+        else:
+            dominant_style = "unknown"
+    else:
+        dominant_style = "unknown"
     
     # Generate unified description
     unified_description = generate_unified_description(
@@ -662,7 +716,9 @@ def synthesize_property_overview(analyses: list[dict]) -> dict:
         style=dominant_style,
         analyses=all_analyses,
         layout_type=layout_type,
-        exterior_features=exterior_features
+        exterior_features=exterior_features,
+        open_concept_detected=open_concept_detected,
+        interior_analyses=interior_analyses
     )
     
     # Create property overview
@@ -683,7 +739,8 @@ def synthesize_property_overview(analyses: list[dict]) -> dict:
         "unified_description": unified_description,
         "property_overview": property_overview,
         "layout_type": layout_type,
-        "exterior_features": exterior_features
+        "interior_features": list(interior_amenities),
+        "exterior_features": list(set(exterior_features))
     }
 
 
@@ -696,7 +753,9 @@ def generate_unified_description(
     style: str,
     analyses: list[dict],
     layout_type: str = "traditional",
-    exterior_features: list = None
+    exterior_features: list = None,
+    open_concept_detected: bool = False,
+    interior_analyses: list = None
 ) -> str:
     """
     Generate a coherent unified description from multiple analyses.
@@ -730,6 +789,17 @@ def generate_unified_description(
     
     room_description = ", ".join(room_parts)
     
+    # Special handling for open-concept to show functional areas
+    if layout_type == "open_concept" and open_concept_detected and len(interior_analyses) == 1:
+        # Show the functional areas instead of just "Open Concept Space"
+        original_rooms = interior_analyses[0].get("rooms", {})
+        functional_areas = []
+        for room_type, count in original_rooms.items():
+            room_name = room_type.replace("_", " ").title()
+            functional_areas.append(room_name)
+        if functional_areas:
+            room_description = ", ".join(functional_areas)
+    
     # Build amenities description
     amenity_descriptions = []
     
@@ -758,7 +828,9 @@ def generate_unified_description(
     
     # Build final description based on layout type
     if layout_type == "open_concept":
-        if total_rooms == 0:
+        if total_rooms == 1:
+            description = f"This {property_type} has 1 open-concept space"
+        elif total_rooms == 0:
             description = f"This {property_type} features an open-concept design"
         else:
             description = f"This {property_type} has an open-concept layout with {total_rooms} distinct area{'s' if total_rooms != 1 else ''}"
