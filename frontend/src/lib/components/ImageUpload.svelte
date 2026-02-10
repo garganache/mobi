@@ -29,7 +29,7 @@
 
   const dispatch = createEventDispatcher<{
     uploadStart: { id: string; batch?: boolean };
-    uploadSuccess: { id: string; response: any; batch?: boolean; synthesis?: any };
+    uploadSuccess: { id: string; response: any; imageUrl?: string; batch?: boolean; synthesis?: any };
     uploadError: { id: string; error: string; batch?: boolean };
     fileSelected: { files: File[] };
     allUploadsComplete: { analyses: any[] };
@@ -141,7 +141,11 @@
           : u
       );
       
-      dispatch('uploadSuccess', { id: upload.id, response: result });
+      dispatch('uploadSuccess', { 
+        id: upload.id, 
+        response: result,
+        imageUrl: upload.previewUrl  // Include image URL for tracking
+      });
       
       // Check if all uploads are complete
       const allComplete = uploads.every(u => !u.isUploading);

@@ -73,7 +73,16 @@
   });
 
   async function handleImageUpload(event: CustomEvent) {
-    const { response } = event.detail;
+    const { response, imageUrl } = event.detail;
+    console.log('📸 handleImageUpload called', { response, imageUrl });
+    
+    // Track the uploaded image if URL is provided
+    if (imageUrl) {
+      console.log('✅ Adding single image to uploadedImages array');
+      uploadedImages = [...uploadedImages, imageUrl];
+      console.log('  - uploadedImages now has', uploadedImages.length, 'images');
+    }
+    
     await handleAnalyzeResponse(response);
   }
 
