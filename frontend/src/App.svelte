@@ -43,6 +43,13 @@
 
   // Debug: Watch UI state
   $: {
+    console.log('🔍 UI State Check:', {
+      formSchemaLength: formSchema.length,
+      uploadedImagesLength: uploadedImages.length,
+      completionPercentage,
+      synthesisData: synthesisData ? 'exists' : 'null'
+    });
+    
     if (formSchema.length === 0 && uploadedImages.length === 0) {
       console.log('📤 UI State: INITIAL (showing upload)');
     } else if (formSchema.length > 0) {
@@ -50,7 +57,7 @@
     } else if (uploadedImages.length > 0 && completionPercentage >= 100) {
       console.log('🎉 UI State: COMPLETION (showing preview button)');
     } else {
-      console.log('⚠️ UI State: UNKNOWN', {
+      console.log('⚠️ UI State: UNKNOWN/FALLBACK', {
         formSchemaLength: formSchema.length,
         uploadedImagesLength: uploadedImages.length,
         completionPercentage
@@ -71,12 +78,21 @@
 
   async function handleBatchUpload(event: CustomEvent) {
     const { synthesis, individualAnalyses: analyses, imageUrls } = event.detail;
+    console.log('🎬 handleBatchUpload event.detail:', event.detail);
+    console.log('  - imageUrls:', imageUrls);
+    console.log('  - imageUrls type:', typeof imageUrls);
+    console.log('  - imageUrls isArray:', Array.isArray(imageUrls));
+    
     synthesisData = synthesis;
     individualAnalyses = analyses;
     
     // Track uploaded images
     if (imageUrls && Array.isArray(imageUrls)) {
+      console.log('✅ Adding images to uploadedImages array');
       uploadedImages = [...uploadedImages, ...imageUrls];
+      console.log('  - uploadedImages now has', uploadedImages.length, 'images');
+    } else {
+      console.error('❌ imageUrls is missing or not an array!');
     }
     
     // Update AI message to show synthesis
@@ -165,6 +181,8 @@
       showPreview
     };
     console.log('💾 Saving state:', state);
+    console.log('   - uploadedImages length:', uploadedImages.length);
+    console.log('   - uploadedImages:', uploadedImages);
     localStorage.setItem('mobi_listing_state', JSON.stringify(state));
   }
 

@@ -33,7 +33,7 @@
     fileSelected: { files: File[] };
     allUploadsComplete: { analyses: any[] };
     batchUploadStart: { fileCount: number };
-    batchUploadSuccess: { synthesis: any; individualAnalyses: any[] };
+    batchUploadSuccess: { synthesis: any; individualAnalyses: any[]; imageUrls: string[] };
     batchUploadError: { error: string };
   }>();
 
@@ -192,12 +192,7 @@
       clearInterval(progressInterval);
       batchUploadProgress = 100;
       
-      dispatch('batchUploadSuccess', { 
-        synthesis: result.synthesis,
-        individualAnalyses: result.individual_analyses
-      });
-
-      // Create upload entries for display
+      // Create upload entries for display and collect image URLs
       const newUploads: ImageUpload[] = files.map((file, index) => ({
         id: generateId(),
         file,
@@ -209,6 +204,15 @@
       }));
       
       uploads = [...uploads, ...newUploads];
+      
+      // Extract image URLs for parent component
+      const imageUrls = newUploads.map(u => u.previewUrl);
+      
+      dispatch('batchUploadSuccess', { 
+        synthesis: result.synthesis,
+        individualAnalyses: result.individual_analyses,
+        imageUrls: imageUrls
+      });
 
     } catch (err) {
       clearInterval(progressInterval);
