@@ -102,6 +102,13 @@
       aiMessage = `Successfully analyzed ${synthesis?.total_rooms || 0} rooms. Check the overview above for details.`;
     }
     
+    // Auto-fill property_type from synthesis if detected by AI
+    if (synthesis?.property_overview?.property_type) {
+      const detectedType = synthesis.property_overview.property_type;
+      console.log(`🏠 Auto-filling property_type = "${detectedType}" from AI synthesis`);
+      listingStore.setAISuggestion('property_type', detectedType);
+    }
+    
     // Save state immediately after batch upload
     saveCurrentState();
     
