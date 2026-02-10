@@ -265,6 +265,16 @@
             >
               {isLoading ? 'Processing...' : completionPercentage >= 100 ? 'Preview Listing' : 'Continue'}
             </button>
+            
+            {#if listingStore.toJSON().property_type && uploadedImages.length > 0 && completionPercentage < 100}
+              <button 
+                class="preview-button"
+                disabled={isLoading}
+                on:click={() => handleFormComplete()}
+              >
+                Preview & Save
+              </button>
+            {/if}
           </div>
         </div>
       {/if}
@@ -436,6 +446,37 @@
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
+  }
+
+  .preview-button {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
+    margin-left: 1rem;
+  }
+
+  .preview-button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 15px -3px rgba(16, 185, 129, 0.4);
+  }
+
+  .preview-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .actions-section {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
   }
 
   .error-message {
