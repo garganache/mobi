@@ -760,8 +760,12 @@ def generate_unified_description(
     """
     Generate a coherent unified description from multiple analyses.
     
+    NOTE: Does not mention specific room counts in description text, as we cannot
+    reliably determine if multiple images show the same room from different angles
+    or different rooms. Instead, describes room TYPES detected.
+    
     Args:
-        total_rooms: Total number of rooms
+        total_rooms: Total number of rooms (used internally but not mentioned in description)
         room_breakdown: Dictionary of room types and counts
         amenities: List of all amenities found
         materials: List of all materials found
@@ -772,22 +776,18 @@ def generate_unified_description(
         exterior_features: List of exterior features
         
     Returns:
-        Unified description string
+        Unified description string (without specific room counts)
     """
     if total_rooms == 0 and not exterior_features:
         return "No rooms detected in the provided images."
     
-    # Build room description
-    room_parts = []
-    for room_type, count in sorted(room_breakdown.items()):
-        if count > 0:
-            room_name = room_type.replace("_", " ").title()
-            if count == 1:
-                room_parts.append(f"1 {room_name}")
-            else:
-                room_parts.append(f"{count} {room_name}s")
+    # Build room description (types only, no counts - we can't reliably detect duplicates)
+    room_types = []
+    for room_type in sorted(room_breakdown.keys()):
+        room_name = room_type.replace("_", " ").title()
+        room_types.append(room_name)
     
-    room_description = ", ".join(room_parts)
+    room_description = ", ".join(room_types)
     
     # Special handling for open-concept to show functional areas
     if layout_type == "open_concept" and open_concept_detected and len(interior_analyses) == 1:
@@ -827,26 +827,16 @@ def generate_unified_description(
         amenity_descriptions.extend(notable)
     
     # Build final description based on layout type
+    # Don't mention room counts - we can't tell if images show same room from different angles
     if layout_type == "open_concept":
-        if total_rooms == 1:
-            description = f"This {property_type} has 1 open-concept space"
-        elif total_rooms == 0:
-            description = f"This {property_type} features an open-concept design"
-        else:
-            description = f"This {property_type} has an open-concept layout with {total_rooms} distinct area{'s' if total_rooms != 1 else ''}"
+        description = f"This {property_type} features an open-concept design"
+        if room_description:
+            description += f" with {room_description} areas"
     else:
-        if total_rooms == 0:
+        if room_description:
+            description = f"This {property_type} includes {room_description}"
+        else:
             description = f"This {property_type}"
-        elif total_rooms == 1:
-            description = f"This {property_type} has 1 room"
-        else:
-            description = f"This {property_type} has {total_rooms} rooms"
-    
-    if room_description:
-        if layout_type == "open_concept":
-            description += f" including {room_description}"
-        else:
-            description += f": {room_description}"
     
     if amenity_descriptions:
         description += f". Features include {', '.join(amenity_descriptions)}"
