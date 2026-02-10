@@ -1,9 +1,86 @@
 <script lang="ts">
+  import { fade } from 'svelte/transition';
+  
   export let listingData: Record<string, any>;
   export let synthesis: any = null;
   export let images: string[] = [];
   export let onEdit: () => void;
   export let onSubmit: () => void;
+  export let individualAnalyses: any[] = [];
+
+  // State for save functionality
+  let isSubmitting = false;
+  let error: string | null = null;
+  let showSuccessModal = false;
+  let savedListingId: string | null = null;
+
+  async function handleSubmit() {
+    isSubmitting = true;
+    error = null;
+    
+    try {
+      // Prepare payload
+      const payload = {
+        // Property data
+        property_type: listingData.property_type,
+        price: listingData.price,
+        bedrooms: listingData.bedrooms,
+        bathrooms: listingData.bathrooms,
+        square_feet: listingData.square_feet,
+        address: listingData.address,
+        city: listingData.city,
+        state: listingData.state,
+        zip_code: listingData.zip_code,
+        
+        // All other form fields
+        additional_fields: listingData,
+        
+        // Images with AI analysis
+        images: images.map((imgUrl, index) => ({
+          image_data: imgUrl,  // Base64 or URL
+          order_index: index,
+          ai_analysis: individualAnalyses[index] || null
+        })),
+        
+        // Synthesis data
+        synthesis: synthesis ? {
+          total_rooms: synthesis.total_rooms,
+          layout_type: synthesis.layout_type,
+          unified_description: synthesis.unified_description,
+          room_breakdown: synthesis.room_breakdown,
+          property_overview: synthesis.property_overview,
+          interior_features: synthesis.interior_features || [],
+          exterior_features: synthesis.exterior_features || []
+        } : null
+      };
+      
+      // POST to backend
+      const response = await fetch('/api/listings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Save failed' }));
+        throw new Error(errorData.detail || 'Failed to save listing');
+      }
+      
+      const result = await response.json();
+      
+      // Show success
+      savedListingId = result.listing_id;
+      showSuccessModal = true;
+      
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Failed to save listing';
+      console.error('Save listing error:', err);
+    } finally {
+      isSubmitting = false;
+    }
+  }
 
   // Generate comprehensive description
   function generateDescription() {
@@ -75,8 +152,8 @@
 
   // Get image caption from vision analysis if available
   function getImageCaption(index: number): string {
-    if (individualAnalyses && individualAnalyses[index]) {
-      const analysis = individualAnalyses[index];
+    if (individualAnalysesFromSynthesis && individualAnalysesFromSynthesis[index]) {
+      const analysis = individualAnalysesFromSynthesis[index];
       if (analysis.description) {
         return analysis.description;
       }
@@ -116,10 +193,7 @@
   }
 
   // Import individual analyses if available
-  let individualAnalyses: any[] = [];
-  if (synthesis?.individual_analyses) {
-    individualAnalyses = synthesis.individual_analyses;
-  }
+  $: individualAnalysesFromSynthesis = synthesis?.individual_analyses || [];
 </script>
 
 <div class="listing-preview">
@@ -223,13 +297,47 @@
 
   <!-- Actions -->
   <div class="preview-actions">
-    <button class="btn-secondary" on:click={onEdit}>
+    <button class="btn-secondary" on:click={onEdit} disabled={isSubmitting}>
       ← Edit Listing
     </button>
-    <button class="btn-primary" on:click={onSubmit}>
-      Publish Listing →
+    <button 
+      class="btn-primary" 
+      on:click={handleSubmit}
+      disabled={isSubmitting}
+    >
+      {#if isSubmitting}
+        <span class="spinner"></span>
+        Saving...
+      {:else}
+        Publish Listing →
+      {/if}
     </button>
   </div>
+
+  {#if error}
+    <div class="error-message">
+      <p>❌ {error}</p>
+    </div>
+  {/if}
+
+  {#if showSuccessModal}
+    <div class="success-modal" transition:fade>
+      <div class="modal-content">
+        <h2>✅ Listing Saved Successfully!</h2>
+        <p>Your property listing has been saved.</p>
+        <p class="listing-id">Listing ID: #{savedListingId}</p>
+        
+        <div class="modal-actions">
+          <button class="btn-secondary" on:click={() => window.location.href = '/'}>
+            Create Another Listing
+          </button>
+          <button class="btn-primary" on:click={() => window.location.href = `/listings/${savedListingId}`}>
+            View Listing
+          </button>
+        </div>
+      </div>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -397,9 +505,86 @@
     padding: 2rem 0;
   }
 
-  .btn-primary {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    color: white;
+  .error-message {
+    text-align: center;
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    color: #dc2626;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s linear infinite;
+    margin-right: 0.5rem;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .success-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  }
+
+  .modal-content h2 {
+    color: #10b981;
+    margin: 0 0 1rem 0;
+    font-size: 1.5rem;
+  }
+
+  .modal-content p {
+    color: #374151;
+    margin: 0.5rem 0;
+    line-height: 1.6;
+  }
+
+  .listing-id {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    color: #6b7280;
+    background: #f3f4f6;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    display: inline-block;
+    margin: 1rem 0;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+  }
+
+  .btn-primary,
+  .btn-secondary {
     padding: 1rem 2rem;
     border-radius: 8px;
     font-size: 1.1rem;
@@ -407,10 +592,15 @@
     cursor: pointer;
     border: none;
     transition: all 0.2s ease;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: white;
     box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3);
   }
 
-  .btn-primary:hover {
+  .btn-primary:hover:not(:disabled) {
     transform: translateY(-1px);
     box-shadow: 0 8px 15px -3px rgba(37, 99, 235, 0.4);
   }
@@ -418,18 +608,30 @@
   .btn-secondary {
     background: #e5e7eb;
     color: #374151;
-    padding: 1rem 2rem;
-    border-radius: 8px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
-    transition: all 0.2s ease;
   }
 
-  .btn-secondary:hover {
+  .btn-secondary:hover:not(:disabled) {
     background: #d1d5db;
     transform: translateY(-1px);
+  }
+
+  .btn-primary:disabled,
+  .btn-secondary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  @media (max-width: 768px) {
+    .modal-actions {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .modal-actions button {
+      width: 100%;
+      max-width: 300px;
+    }
   }
 
   /* Responsive design */

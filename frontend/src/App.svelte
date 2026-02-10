@@ -167,8 +167,8 @@
   }
 
   function handleSubmitListing() {
-    // TODO: Implement listing submission
-    alert('Listing submission coming soon!');
+    // This function is now handled by the ListingPreview component's internal handleSubmit
+    // The onSubmit prop is kept for backward compatibility but not used
   }
 
   // Note: Removed auto-subscribe to prevent infinite loop.
@@ -200,6 +200,7 @@
       listingData={listingStore.toJSON()}
       synthesis={synthesisData}
       images={uploadedImages}
+      individualAnalyses={individualAnalyses}
       onEdit={handleEditListing}
       onSubmit={handleSubmitListing}
     />

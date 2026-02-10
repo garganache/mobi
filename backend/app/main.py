@@ -4,7 +4,7 @@ import json
 
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from sqlalchemy import Column, DateTime, Integer, Text, create_engine
 from sqlalchemy.orm import declarative_base, Session, sessionmaker
 import os
@@ -20,6 +20,8 @@ from app.schemas import (
 )
 from app.orchestrator import orchestrator
 from app.vision_model import analyze_property_image, analyze_multiple_images, VisionModelError
+from app.models import Listing, ListingImage, ListingSynthesis
+from app.models import Base, Listing, ListingImage, ListingSynthesis
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
@@ -28,65 +30,68 @@ if not DATABASE_URL:
 engine = create_engine(DATABASE_URL, future=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, future=True)
 
-Base = declarative_base()
-
-
-class Description(Base):
-    __tablename__ = "descriptions"
-
-    id = Column(Integer, primary_key=True, index=True)
-    text = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-
-class ImageAnalysis(Base):
-    __tablename__ = "image_analyses"
-
-    id = Column(Integer, primary_key=True, index=True)
-    image_filename = Column(Text, nullable=True)
-    description = Column(Text, nullable=False)
-    property_type = Column(Text, nullable=True)
-    rooms_data = Column(Text, nullable=True)  # JSON string
-    amenities_data = Column(Text, nullable=True)  # JSON string
-    style = Column(Text, nullable=True)
-    materials_data = Column(Text, nullable=True)  # JSON string
-    condition = Column(Text, nullable=True)
-    raw_response = Column(Text, nullable=True)  # Full JSON response for debugging
-    created_at = Column(DateTime, default=datetime.utcnow)
-
 
 def init_db() -> None:
     Base.metadata.create_all(bind=engine)
 
 
-class DescriptionIn(BaseModel):
-    text: str
+# Request schemas for save listing endpoint
+class ImageDataSchema(BaseModel):
+    image_data: str  # base64 encoded
+    ai_analysis: Optional[dict] = None
+    order_index: int = 0
 
 
-class DescriptionOut(BaseModel):
-    id: int
-    text: str
-    created_at: datetime
+class SynthesisDataSchema(BaseModel):
+    total_rooms: int
+    layout_type: str
+    unified_description: str
+    room_breakdown: dict
+    property_overview: dict
+    interior_features: list = []
+    exterior_features: list = []
 
-    class Config:
-        orm_mode = True
+
+class SaveListingRequest(BaseModel):
+    # Property data
+    property_type: str
+    price: Optional[int] = None
+    bedrooms: Optional[int] = None
+    bathrooms: Optional[float] = None
+    square_feet: Optional[int] = None
+    
+    # Location
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    zip_code: Optional[str] = None
+    
+    # Additional form fields (dynamic)
+    additional_fields: Optional[dict] = {}
+    
+    # Images
+    images: List[ImageDataSchema] = []
+    
+    # Synthesis
+    synthesis: Optional[SynthesisDataSchema] = None
+    
+    @validator('property_type', pre=True)
+    def validate_property_type(cls, v):
+        if not v or (isinstance(v, str) and not v.strip()):
+            raise ValueError('property_type is required')
+        return v
+    
+    @validator('images', pre=True)
+    def validate_images(cls, v):
+        if not v or len(v) == 0:
+            raise ValueError('At least one image is required')
+        return v
 
 
-class ImageAnalysisOut(BaseModel):
-    id: int
-    image_filename: Optional[str]
-    description: str
-    property_type: Optional[str]
-    rooms_data: Optional[str]
-    amenities_data: Optional[str]
-    style: Optional[str]
-    materials_data: Optional[str]
-    condition: Optional[str]
-    raw_response: Optional[str]
-    created_at: datetime
-
-    class Config:
-        orm_mode = True
+class SaveListingResponse(BaseModel):
+    success: bool
+    listing_id: int
+    message: str
 
 
 def get_db():
@@ -120,48 +125,7 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.post("/api/description", response_model=DescriptionOut)
-def create_description(payload: DescriptionIn, db: Session = Depends(get_db)):
-    text = payload.text.strip()
-    if not text:
-        raise HTTPException(status_code=400, detail="Description cannot be empty")
-
-    desc = Description(text=text)
-    db.add(desc)
-    db.commit()
-    db.refresh(desc)
-    return desc
-
-
-@app.get("/api/description/latest", response_model=Optional[DescriptionOut])
-def get_latest_description(db: Session = Depends(get_db)):
-    desc = db.query(Description).order_by(Description.created_at.desc()).first()
-    if desc is None:
-        raise HTTPException(status_code=404, detail="No description found")
-    return desc
-
-
-@app.get("/api/description", response_model=list[DescriptionOut])
-def list_descriptions(limit: int = 10, db: Session = Depends(get_db)):
-    """Return the most recent descriptions, newest first."""
-    q = db.query(Description).order_by(Description.created_at.desc()).limit(limit)
-    return q.all()
-
-
-@app.get("/api/image-analyses", response_model=list[ImageAnalysisOut])
-def list_image_analyses(limit: int = 10, db: Session = Depends(get_db)):
-    """Return the most recent image analyses, newest first."""
-    q = db.query(ImageAnalysis).order_by(ImageAnalysis.created_at.desc()).limit(limit)
-    return q.all()
-
-
-@app.get("/api/image-analyses/{analysis_id}", response_model=ImageAnalysisOut)
-def get_image_analysis(analysis_id: int, db: Session = Depends(get_db)):
-    """Get a specific image analysis by ID."""
-    analysis = db.query(ImageAnalysis).filter(ImageAnalysis.id == analysis_id).first()
-    if analysis is None:
-        raise HTTPException(status_code=404, detail="Image analysis not found")
-    return analysis
+# Listing management endpoints
 
 
 @app.post("/api/analyze-step", response_model=AnalyzeStepResponse)
@@ -228,25 +192,16 @@ def analyze_step(request: AnalyzeStepRequest, db: Session = Depends(get_db)):
             vision_analysis = vision_result.copy()
             
             # Save vision analysis to database
+            # TODO: This needs to be updated to work with the new ListingImage model
+            # For now, we'll skip saving to database since we don't have a listing_id yet
+            # In the future, this should create a new listing and associate the image with it
             try:
-                image_analysis = ImageAnalysis(
-                    description=vision_result.get("description", ""),
-                    property_type=vision_result.get("property_type"),
-                    rooms_data=json.dumps(vision_result.get("rooms", {})),
-                    amenities_data=json.dumps(vision_result.get("amenities", [])),
-                    style=vision_result.get("style"),
-                    materials_data=json.dumps(vision_result.get("materials", [])),
-                    condition=vision_result.get("condition"),
-                    raw_response=json.dumps(vision_result)
-                )
-                db.add(image_analysis)
-                db.commit()
-                db.refresh(image_analysis)
+                # For now, just log the analysis
+                logger.info(f"Vision analysis completed: {vision_result.get('description', '')}")
                 
-                # Add database ID to vision analysis for reference
-                vision_analysis["analysis_id"] = image_analysis.id
+                # Add a placeholder ID to vision analysis for reference
+                vision_analysis["analysis_id"] = "temp_analysis_id"
                 
-                logger.info(f"Saved image analysis to database with ID: {image_analysis.id}")
             except Exception as db_error:
                 logger.error(f"Failed to save image analysis to database: {db_error}")
                 # Continue even if database save fails
@@ -408,3 +363,95 @@ async def analyze_batch_images(files: List[UploadFile] = File(...)):
     except Exception as e:
         logger.error(f"Unexpected error in batch analysis: {e}")
         raise HTTPException(status_code=500, detail=f"Batch analysis failed: {str(e)}")
+
+
+@app.post("/api/listings", response_model=SaveListingResponse)
+def save_listing(request: SaveListingRequest, db: Session = Depends(get_db)):
+    """
+    Save a complete property listing to the database.
+    
+    Accepts:
+    - Property details (type, price, bedrooms, etc.)
+    - Images with AI analysis
+    - Synthesis data from multi-image analysis
+    
+    Returns:
+    - Listing ID
+    - Success confirmation
+    """
+    try:
+        # Validate required fields
+        if not request.property_type:
+            raise HTTPException(status_code=400, detail="property_type is required")
+        
+        if not request.images or len(request.images) == 0:
+            raise HTTPException(status_code=400, detail="At least one image is required")
+        
+        # Create listing
+        listing = Listing(
+            property_type=request.property_type,
+            price=request.price,
+            bedrooms=request.bedrooms,
+            bathrooms=request.bathrooms,
+            square_feet=request.square_feet,
+            address=request.address,
+            city=request.city,
+            state=request.state,
+            zip_code=request.zip_code,
+            status="draft"  # Default to draft
+        )
+        
+        db.add(listing)
+        db.flush()  # Get listing.id
+        
+        # Save images
+        for img_data in request.images:
+            listing_image = ListingImage(
+                listing_id=listing.id,
+                image_data=img_data.image_data,
+                order_index=img_data.order_index
+            )
+            
+            # Add AI analysis if present
+            if img_data.ai_analysis:
+                listing_image.ai_description = img_data.ai_analysis.get("description")
+                listing_image.detected_rooms = img_data.ai_analysis.get("rooms")
+                listing_image.detected_amenities = img_data.ai_analysis.get("amenities")
+                listing_image.property_type = img_data.ai_analysis.get("property_type")
+                listing_image.style = img_data.ai_analysis.get("style")
+                listing_image.condition = img_data.ai_analysis.get("condition")
+            
+            db.add(listing_image)
+        
+        # Save synthesis data
+        if request.synthesis:
+            synthesis = ListingSynthesis(
+                listing_id=listing.id,
+                total_rooms=request.synthesis.total_rooms,
+                layout_type=request.synthesis.layout_type,
+                unified_description=request.synthesis.unified_description,
+                room_breakdown=request.synthesis.room_breakdown,
+                property_overview=request.synthesis.property_overview,
+                interior_features=request.synthesis.interior_features,
+                exterior_features=request.synthesis.exterior_features
+            )
+            db.add(synthesis)
+        
+        # Commit transaction
+        db.commit()
+        db.refresh(listing)
+        
+        logger.info(f"Listing saved successfully: ID={listing.id}")
+        
+        return SaveListingResponse(
+            success=True,
+            listing_id=listing.id,
+            message="Listing saved successfully"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error saving listing: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to save listing: {str(e)}")

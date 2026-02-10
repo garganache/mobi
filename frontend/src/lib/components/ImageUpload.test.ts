@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
-import MultiImageUpload from '$lib/components/MultiImageUpload.svelte';
+import MultiImageUpload from './MultiImageUpload.svelte';
 
 describe('MultiImageUpload - Multi-Image Batch Upload', () => {
   it('should support multiple file selection', () => {
