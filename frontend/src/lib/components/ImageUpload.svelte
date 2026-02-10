@@ -7,7 +7,6 @@
 
   export let maxFileSize = 10 * 1024 * 1024; // 10MB
   export let acceptedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-  export let uploadEndpoint = '/api/analyze-step';
   export let multiple = true; // Support multiple images
   export let batchMode = false; // Use batch API for multiple images
   
@@ -28,11 +27,7 @@
   let batchUploadProgress = 0;
 
   const dispatch = createEventDispatcher<{
-    uploadStart: { id: string; batch?: boolean };
-    uploadSuccess: { id: string; response: any; imageUrl?: string; batch?: boolean; synthesis?: any };
-    uploadError: { id: string; error: string; batch?: boolean };
     fileSelected: { files: File[] };
-    allUploadsComplete: { analyses: any[] };
     batchUploadStart: { fileCount: number };
     batchUploadSuccess: { synthesis: any; individualAnalyses: any[]; imageUrls: string[] };
     batchUploadError: { error: string };
@@ -83,92 +78,13 @@
     
     uploads = [...uploads, ...newUploads];
     
-    // Use batch API if enabled and multiple files are selected
-    if (batchMode && validFiles.length > 1) {
-      uploadBatchFiles(validFiles);
-    } else {
-      // Auto-upload files individually
-      newUploads.forEach(upload => uploadFile(upload));
+    // Always use batch upload (works for 1 or more files)
+    if (batchMode) {
+      uploadFiles(validFiles, newUploads);
     }
   }
 
-  async function uploadFile(upload: ImageUpload) {
-    dispatch('uploadStart', { id: upload.id });
-
-    const progressInterval = setInterval(() => {
-      uploads = uploads.map(u => 
-        u.id === upload.id 
-          ? { ...u, progress: Math.min(u.progress + 10, 90) }
-          : u
-      );
-    }, 200);
-
-    try {
-      // Convert file to base64 for the API
-      const base64 = await fileToBase64(upload.file);
-
-      const response = await fetch(uploadEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          input_type: 'image',
-          new_input: base64,
-          current_data: {}
-        })
-      });
-
-      clearInterval(progressInterval);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: 'Upload failed' }));
-        throw new Error(errorData.detail || 'Upload failed');
-      }
-
-      const result = await response.json();
-      
-      // Update upload with result
-      uploads = uploads.map(u => 
-        u.id === upload.id 
-          ? { 
-              ...u, 
-              isUploading: false, 
-              progress: 100,
-              analysis: result.vision_analysis || null,
-              error: null
-            }
-          : u
-      );
-      
-      dispatch('uploadSuccess', { 
-        id: upload.id, 
-        response: result,
-        imageUrl: upload.previewUrl  // Include image URL for tracking
-      });
-      
-      // Check if all uploads are complete
-      const allComplete = uploads.every(u => !u.isUploading);
-      if (allComplete) {
-        const analyses = uploads.map(u => u.analysis).filter(a => a !== null);
-        dispatch('allUploadsComplete', { analyses });
-      }
-
-    } catch (err) {
-      clearInterval(progressInterval);
-      const errorMsg = err instanceof Error ? err.message : 'Upload failed';
-      
-      uploads = uploads.map(u => 
-        u.id === upload.id 
-          ? { ...u, isUploading: false, progress: 0, error: errorMsg }
-          : u
-      );
-      
-      dispatch('uploadError', { id: upload.id, error: errorMsg });
-    }
-  }
-
-  async function uploadBatchFiles(files: File[]) {
+  async function uploadFiles(files: File[], uploadEntries: ImageUpload[]) {
     isBatchUploading = true;
     batchUploadProgress = 0;
     dispatch('batchUploadStart', { fileCount: files.length });
@@ -188,8 +104,8 @@
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: 'Batch upload failed' }));
-        throw new Error(errorData.detail || 'Batch upload failed');
+        const errorData = await response.json().catch(() => ({ detail: 'Upload failed' }));
+        throw new Error(errorData.detail || 'Upload failed');
       }
 
       const result = await response.json();
@@ -197,21 +113,23 @@
       clearInterval(progressInterval);
       batchUploadProgress = 100;
       
-      // Create upload entries for display and collect image URLs
-      const newUploads: ImageUpload[] = files.map((file, index) => ({
-        id: generateId(),
-        file,
-        previewUrl: URL.createObjectURL(file),
-        isUploading: false,
-        progress: 100,
-        error: null,
-        analysis: result.individual_analyses[index] || null,
-      }));
+      // Update existing upload entries with analysis results
+      uploads = uploads.map(upload => {
+        const entryIndex = uploadEntries.findIndex(e => e.id === upload.id);
+        if (entryIndex !== -1) {
+          return {
+            ...upload,
+            isUploading: false,
+            progress: 100,
+            analysis: result.individual_analyses[entryIndex] || null,
+            error: null
+          };
+        }
+        return upload;
+      });
       
-      uploads = [...uploads, ...newUploads];
-      
-      // Extract image URLs for parent component
-      const imageUrls = newUploads.map(u => u.previewUrl);
+      // Extract image URLs from the upload entries we just processed
+      const imageUrls = uploadEntries.map(u => u.previewUrl);
       
       dispatch('batchUploadSuccess', { 
         synthesis: result.synthesis,
@@ -221,7 +139,16 @@
 
     } catch (err) {
       clearInterval(progressInterval);
-      const errorMsg = err instanceof Error ? err.message : 'Batch upload failed';
+      const errorMsg = err instanceof Error ? err.message : 'Upload failed';
+      
+      // Mark these specific uploads as failed
+      uploads = uploads.map(upload => {
+        if (uploadEntries.some(e => e.id === upload.id)) {
+          return { ...upload, isUploading: false, progress: 0, error: errorMsg };
+        }
+        return upload;
+      });
+      
       dispatch('batchUploadError', { error: errorMsg });
       error = errorMsg;
     } finally {
@@ -230,19 +157,6 @@
         batchUploadProgress = 0;
       }, 500);
     }
-  }
-
-  function fileToBase64(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        // Remove the data:image/... prefix to get just the base64 data
-        const base64String = (reader.result as string).split(',')[1];
-        resolve(base64String);
-      };
-      reader.onerror = reject;
-    });
   }
 
   function handleDrop(e: DragEvent) {

@@ -72,20 +72,6 @@
     loadSavedState();
   });
 
-  async function handleImageUpload(event: CustomEvent) {
-    const { response, imageUrl } = event.detail;
-    console.log('📸 handleImageUpload called', { response, imageUrl });
-    
-    // Track the uploaded image if URL is provided
-    if (imageUrl) {
-      console.log('✅ Adding single image to uploadedImages array');
-      uploadedImages = [...uploadedImages, imageUrl];
-      console.log('  - uploadedImages now has', uploadedImages.length, 'images');
-    }
-    
-    await handleAnalyzeResponse(response);
-  }
-
   async function handleBatchUpload(event: CustomEvent) {
     const { synthesis, individualAnalyses: analyses, imageUrls } = event.detail;
     console.log('🎬 handleBatchUpload event.detail:', event.detail);
@@ -367,9 +353,8 @@
             <h2>{t('header.get_started', 'ro')}</h2>
             <p>{t('message.upload_to_begin', 'ro')}</p>
             <ImageUpload 
-              on:uploadSuccess={handleImageUpload}
               on:batchUploadSuccess={handleBatchUpload}
-              on:uploadError={(e) => error = e.detail.error}
+              on:batchUploadError={(e) => error = e.detail.error}
               batchMode={true}
             />
           </div>
