@@ -74,8 +74,34 @@ class MockVisionModel(VisionModelInterface):
                 "description": "A bedroom with hardwood floors and large windows. The room appears clean and well-maintained.",
                 "property_type": "apartment",
                 "rooms": {"bedroom": 1},
-                "amenities": ["hardwood_floors"],
+                "amenities": ["hardwood_floors", "large_window"],
                 "style": "modern",
+                "materials": ["hardwood_floors"],
+                "confidence_scores": {
+                    "property_type": 0.8,
+                    "style": 0.75,
+                    "amenities": 0.7
+                }
+            },
+            "bathroom": {
+                "description": "A modern bathroom with tile floors, a bathtub, and updated fixtures. The space is clean and well-lit.",
+                "property_type": "apartment",
+                "rooms": {"bathroom": 1},
+                "amenities": ["tile_floors", "bathtub", "updated_fixtures"],
+                "style": "modern",
+                "materials": ["tile_floors"],
+                "confidence_scores": {
+                    "property_type": 0.85,
+                    "style": 0.8,
+                    "amenities": 0.75
+                }
+            },
+            "dining_room": {
+                "description": "A formal dining room with hardwood floors and a chandelier. The room connects to the kitchen and living areas.",
+                "property_type": "house",
+                "rooms": {"dining_room": 1},
+                "amenities": ["hardwood_floors", "chandelier"],
+                "style": "traditional",
                 "materials": ["hardwood_floors"],
                 "confidence_scores": {
                     "property_type": 0.8,
@@ -108,10 +134,14 @@ class MockVisionModel(VisionModelInterface):
             # Simple heuristic: choose mock response based on image dimensions
             if width > height * 1.5:  # Likely exterior/wide shot
                 response_key = "exterior"
-            elif height > width * 1.2:  # Likely tall room
-                response_key = "kitchen"
-            else:  # Square-ish, likely living room or bedroom
-                response_key = "living_room"
+            elif height > width * 1.2:  # Likely tall room (kitchen/bathroom)
+                # Randomly choose between kitchen and bathroom for variety
+                import random
+                response_key = random.choice(["kitchen", "bathroom"])
+            else:  # Square-ish, likely living room, bedroom, or dining room
+                # Randomly choose for more realistic variety
+                import random
+                response_key = random.choice(["living_room", "bedroom", "dining_room"])
             
             # Add some variation based on image size
             response = self.mock_responses[response_key].copy()
@@ -122,12 +152,25 @@ class MockVisionModel(VisionModelInterface):
                 "size_bytes": len(image_data)
             }
             
+            # Add condition based on image size (larger images might indicate better condition)
+            if len(image_data) > 50000:  # Large image
+                response["condition"] = "excellent"
+            elif len(image_data) > 20000:  # Medium image
+                response["condition"] = "good"
+            else:  # Small image
+                response["condition"] = "fair"
+            
             logger.info(f"MockVisionModel returning {response_key} response for {width}x{height} image")
             return response
             
         except Exception as e:
             logger.warning(f"Could not parse image, using default mock response: {e}")
-            return self.mock_responses["living_room"]
+            # Return a random room type instead of just living_room
+            import random
+            default_key = random.choice(["living_room", "bedroom", "kitchen"])
+            response = self.mock_responses[default_key].copy()
+            response["condition"] = "good"
+            return response
 
 
 class OpenAIVisionModel(VisionModelInterface):
@@ -420,6 +463,278 @@ def get_vision_model(model_type: str = "mock", **kwargs) -> VisionModelInterface
     if _vision_model is None:
         _vision_model = create_vision_model(model_type, **kwargs)
     return _vision_model
+
+def analyze_multiple_images(
+    images: list[bytes],
+    model_type: str = "mock",
+    prompt: str = DEFAULT_PROPERTY_PROMPT,
+    preprocess: bool = True,
+    **model_kwargs
+) -> dict[str, Any]:
+    """
+    Analyze multiple property images and synthesize unified results.
+    
+    Args:
+        images: List of image data (bytes)
+        model_type: Vision model to use ('mock', 'openai', 'anthropic')
+        prompt: Custom prompt for the vision model
+        preprocess: Whether to preprocess images
+        **model_kwargs: Additional arguments passed to model constructor
+        
+    Returns:
+        Dictionary containing individual analyses and synthesized overview
+        {
+            "individual_analyses": [...],  # Each image's analysis
+            "synthesis": {
+                "total_rooms": 6,
+                "room_breakdown": {...},
+                "amenities_by_room": {...},
+                "unified_description": "...",
+                "property_overview": {...}
+            }
+        }
+        
+    Raises:
+        VisionModelError: If analysis fails
+    """
+    # Analyze each image individually
+    individual_analyses = []
+    
+    for i, image_data in enumerate(images):
+        try:
+            analysis = analyze_property_image(
+                image_data=image_data,
+                model_type=model_type,
+                prompt=prompt,
+                preprocess=preprocess,
+                **model_kwargs
+            )
+            analysis["image_index"] = i
+            individual_analyses.append(analysis)
+        except Exception as e:
+            logger.error(f"Failed to analyze image {i}: {e}")
+            # Add a minimal analysis for failed images
+            individual_analyses.append({
+                "image_index": i,
+                "description": f"Analysis failed for image {i}",
+                "property_type": "unknown",
+                "rooms": {},
+                "amenities": [],
+                "style": "unknown",
+                "materials": [],
+                "condition": "unknown",
+                "error": str(e)
+            })
+    
+    # Synthesize the results
+    synthesis = synthesize_property_overview(individual_analyses)
+    
+    return {
+        "individual_analyses": individual_analyses,
+        "synthesis": synthesis
+    }
+
+
+def synthesize_property_overview(analyses: list[dict]) -> dict:
+    """
+    Correlate multiple image analyses into unified property description.
+    
+    Args:
+        analyses: List of individual image analyses
+        
+    Returns:
+        Dictionary containing synthesized property overview
+    """
+    if not analyses:
+        return {
+            "total_rooms": 0,
+            "room_breakdown": {},
+            "amenities_by_room": {},
+            "unified_description": "No images analyzed.",
+            "property_overview": {}
+        }
+    
+    # Aggregate room counts across all images
+    total_rooms = 0
+    room_breakdown = {}
+    amenities_by_room = {}
+    all_materials = set()
+    all_amenities = set()
+    property_types = []
+    styles = []
+    
+    # Process each analysis
+    for i, analysis in enumerate(analyses):
+        room_key = f"room_{i+1}"
+        
+        # Count rooms from this analysis
+        if analysis.get("rooms"):
+            for room_type, count in analysis["rooms"].items():
+                room_breakdown[room_type] = room_breakdown.get(room_type, 0) + count
+                total_rooms += count
+        
+        # Collect amenities for this room
+        room_amenities = analysis.get("amenities", [])
+        if room_amenities:
+            amenities_by_room[room_key] = room_amenities
+            all_amenities.update(room_amenities)
+        
+        # Collect materials
+        materials = analysis.get("materials", [])
+        if materials:
+            all_materials.update(materials)
+        
+        # Collect property types and styles
+        if analysis.get("property_type"):
+            property_types.append(analysis["property_type"])
+        if analysis.get("style"):
+            styles.append(analysis["style"])
+    
+    # Determine dominant property type and style
+    dominant_property_type = max(set(property_types), key=property_types.count) if property_types else "unknown"
+    dominant_style = max(set(styles), key=styles.count) if styles else "unknown"
+    
+    # Generate unified description
+    unified_description = generate_unified_description(
+        total_rooms=total_rooms,
+        room_breakdown=room_breakdown,
+        amenities=list(all_amenities),
+        materials=list(all_materials),
+        property_type=dominant_property_type,
+        style=dominant_style,
+        analyses=analyses
+    )
+    
+    # Create property overview
+    property_overview = {
+        "property_type": dominant_property_type,
+        "style": dominant_style,
+        "total_rooms": total_rooms,
+        "room_breakdown": room_breakdown,
+        "common_amenities": list(all_amenities),
+        "common_materials": list(all_materials),
+        "condition": determine_overall_condition(analyses)
+    }
+    
+    return {
+        "total_rooms": total_rooms,
+        "room_breakdown": room_breakdown,
+        "amenities_by_room": amenities_by_room,
+        "unified_description": unified_description,
+        "property_overview": property_overview
+    }
+
+
+def generate_unified_description(
+    total_rooms: int,
+    room_breakdown: dict,
+    amenities: list,
+    materials: list,
+    property_type: str,
+    style: str,
+    analyses: list[dict]
+) -> str:
+    """
+    Generate a coherent unified description from multiple analyses.
+    
+    Args:
+        total_rooms: Total number of rooms
+        room_breakdown: Dictionary of room types and counts
+        amenities: List of all amenities found
+        materials: List of all materials found
+        property_type: Dominant property type
+        style: Dominant style
+        analyses: Original individual analyses
+        
+    Returns:
+        Unified description string
+    """
+    if total_rooms == 0:
+        return "No rooms detected in the provided images."
+    
+    # Build room description
+    room_parts = []
+    for room_type, count in sorted(room_breakdown.items()):
+        if count > 0:
+            room_name = room_type.replace("_", " ").title()
+            if count == 1:
+                room_parts.append(f"1 {room_name}")
+            else:
+                room_parts.append(f"{count} {room_name}s")
+    
+    room_description = ", ".join(room_parts)
+    
+    # Build amenities description
+    amenity_descriptions = []
+    
+    # Check for common patterns
+    if "hardwood_floors" in materials and sum(1 for a in analyses if "hardwood_floors" in a.get("amenities", [])) > len(analyses) / 2:
+        amenity_descriptions.append("hardwood floors throughout")
+    
+    if "granite_counters" in amenities:
+        amenity_descriptions.append("granite countertops")
+    
+    if "stainless_steel" in amenities:
+        amenity_descriptions.append("stainless steel appliances")
+    
+    if "fireplace" in amenities:
+        amenity_descriptions.append("fireplace")
+    
+    if "dishwasher" in amenities:
+        amenity_descriptions.append("dishwasher")
+    
+    # Add other notable amenities
+    other_amenities = [a for a in amenities if a not in ["hardwood_floors", "granite_counters", "stainless_steel", "fireplace", "dishwasher"]]
+    if other_amenities:
+        # Pick a few more to mention
+        notable = [a.replace("_", " ") for a in other_amenities[:2]]
+        amenity_descriptions.extend(notable)
+    
+    # Build final description
+    if total_rooms == 1:
+        description = f"This {property_type} has 1 room"
+    else:
+        description = f"This {property_type} has {total_rooms} rooms"
+    
+    if room_description:
+        description += f": {room_description}"
+    
+    if amenity_descriptions:
+        description += f". Features include {', '.join(amenity_descriptions)}"
+    
+    if style and style != "unknown":
+        description += f". Overall style: {style}"
+    
+    description += "."
+    
+    return description
+
+
+def determine_overall_condition(analyses: list[dict]) -> str:
+    """
+    Determine the overall condition from multiple analyses.
+    
+    Args:
+        analyses: List of individual analyses
+        
+    Returns:
+        Overall condition string
+    """
+    conditions = [analysis.get("condition", "unknown") for analysis in analyses]
+    
+    # Count condition frequencies
+    condition_counts = {}
+    for condition in conditions:
+        condition_counts[condition] = condition_counts.get(condition, 0) + 1
+    
+    # Return the most common condition, or "mixed" if varied
+    if len(condition_counts) == 1:
+        return list(condition_counts.keys())[0]
+    elif len(condition_counts) > 1:
+        return "mixed"
+    else:
+        return "unknown"
+
 
 def analyze_property_image(image_data: bytes, model_type: str = "mock", 
                           prompt: str = DEFAULT_PROPERTY_PROMPT, 

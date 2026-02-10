@@ -1,6 +1,54 @@
 # mobi Progress
 
-## TASK-016: Write unit tests for input components - 2026-02-09
+## TASK-029: Multi-Image Analysis with Correlation & Synthesis - 2026-02-10
+
+**Status:** Completed
+
+### What Was Done
+- **Backend Implementation:**
+  - Created `analyze_multiple_images()` function in `backend/app/vision_model.py`
+  - Implemented `synthesize_property_overview()` correlation logic
+  - Added `/api/analyze-batch` endpoint in `backend/app/main.py`
+  - Enhanced mock model to return realistic multi-image synthesis scenarios
+  - Added comprehensive unit tests for synthesis logic (16 tests)
+
+- **Frontend Implementation:**
+  - Created `MultiImageUpload.svelte` component supporting up to 10 images
+  - Created `PropertyAnalysisResults.svelte` component for displaying synthesis
+  - Implemented unified property overview with room breakdown
+  - Added collapsible individual analyses section
+  - Created demo page at `/multi-image-demo`
+
+- **Key Features Implemented:**
+  - Multi-image batch upload with drag-and-drop
+  - Synthesis of individual analyses into unified property description
+  - Room counting and breakdown by type
+  - Amenity aggregation across all images
+  - Pattern detection (e.g., "hardwood floors throughout")
+  - Coherent narrative generation
+
+### Technical Details
+- **Synthesis Algorithm:** Correlates multiple image analyses to count total rooms, identify unique spaces, aggregate amenities, and generate coherent property descriptions
+- **API Design:** RESTful `/api/analyze-batch` endpoint accepting multiple image files
+- **Frontend Architecture:** Modular components with clear separation of concerns
+- **Testing:** Comprehensive unit tests covering all major functions
+
+### Verification
+- ✅ Backend builds and runs successfully
+- ✅ Frontend builds and compiles without errors
+- ✅ All unit tests pass (16 new tests for multi-image functionality)
+- ✅ API endpoint tested with mock model
+- ✅ Frontend components render correctly
+
+### Files Changed
+- `backend/app/vision_model.py` - Added multi-image analysis functions
+- `backend/app/main.py` - Added `/api/analyze-batch` endpoint
+- `backend/tests/test_multi_image_analysis.py` - New comprehensive test suite
+- `frontend/src/lib/components/MultiImageUpload.svelte` - New multi-image upload component
+- `frontend/src/lib/components/PropertyAnalysisResults.svelte` - New results display component
+- `frontend/src/routes/multi-image-demo/+page.svelte` - New demo page
+
+## Previous Task: TASK-016 - 2026-02-09
 
 **Status:** Completed
 

@@ -6,9 +6,7 @@
 
   export let maxFileSize = 10 * 1024 * 1024; // 10MB
   export let acceptedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-  export let uploadEndpoint = '/api/analyze-step';
-  export let multiple = true; // Support multiple images
-  export let batchMode = false; // Use batch API for multiple images
+  export let maxImages = 10;
   
   interface ImageUpload {
     id: string;
@@ -17,24 +15,17 @@
     isUploading: boolean;
     progress: number;
     error: string | null;
-    analysis: any | null;
   }
 
   let uploads: ImageUpload[] = [];
   let isDragging = false;
   let error: string | null = null;
-  let isBatchUploading = false;
-  let batchUploadProgress = 0;
+  let isAnalyzing = false;
+  let synthesis: any | null = null;
 
   const dispatch = createEventDispatcher<{
-    uploadStart: { id: string; batch?: boolean };
-    uploadSuccess: { id: string; response: any; batch?: boolean; synthesis?: any };
-    uploadError: { id: string; error: string; batch?: boolean };
-    fileSelected: { files: File[] };
-    allUploadsComplete: { analyses: any[] };
-    batchUploadStart: { fileCount: number };
-    batchUploadSuccess: { synthesis: any; individualAnalyses: any[] };
-    batchUploadError: { error: string };
+    analysisComplete: { synthesis: any; individualAnalyses: any[] };
+    uploadError: { error: string };
   }>();
 
   function validateFile(file: File): string | null {
@@ -67,173 +58,97 @@
     
     if (validFiles.length === 0) return;
     
-    dispatch('fileSelected', { files: validFiles });
+    // Check if we have room for more images
+    if (uploads.length + validFiles.length > maxImages) {
+      error = `Maximum ${maxImages} images allowed. You can add ${maxImages - uploads.length} more.`;
+      return;
+    }
     
     // Create upload entries
     const newUploads: ImageUpload[] = validFiles.map(file => ({
       id: generateId(),
       file,
       previewUrl: URL.createObjectURL(file),
-      isUploading: true,
+      isUploading: false,
       progress: 0,
       error: null,
-      analysis: null,
     }));
     
     uploads = [...uploads, ...newUploads];
+  }
+
+  async function analyzeAllImages() {
+    if (uploads.length === 0) return;
     
-    // Use batch API if enabled and multiple files are selected
-    if (batchMode && validFiles.length > 1) {
-      uploadBatchFiles(validFiles);
-    } else {
-      // Auto-upload files individually
-      newUploads.forEach(upload => uploadFile(upload));
-    }
-  }
-
-  async function uploadFile(upload: ImageUpload) {
-    dispatch('uploadStart', { id: upload.id });
-
-    const progressInterval = setInterval(() => {
-      uploads = uploads.map(u => 
-        u.id === upload.id 
-          ? { ...u, progress: Math.min(u.progress + 10, 90) }
-          : u
-      );
-    }, 200);
-
+    isAnalyzing = true;
+    error = null;
+    synthesis = null;
+    
+    // Show progress for all images
+    uploads = uploads.map(u => ({ ...u, isUploading: true, progress: 0 }));
+    
     try {
-      // Convert file to base64 for the API
-      const base64 = await fileToBase64(upload.file);
-
-      const response = await fetch(uploadEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          input_type: 'image',
-          new_input: base64,
-          current_data: {}
-        })
-      });
-
-      clearInterval(progressInterval);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: 'Upload failed' }));
-        throw new Error(errorData.detail || 'Upload failed');
-      }
-
-      const result = await response.json();
-      
-      // Update upload with result
-      uploads = uploads.map(u => 
-        u.id === upload.id 
-          ? { 
-              ...u, 
-              isUploading: false, 
-              progress: 100,
-              analysis: result.vision_analysis || null,
-              error: null
-            }
-          : u
-      );
-      
-      dispatch('uploadSuccess', { id: upload.id, response: result });
-      
-      // Check if all uploads are complete
-      const allComplete = uploads.every(u => !u.isUploading);
-      if (allComplete) {
-        const analyses = uploads.map(u => u.analysis).filter(a => a !== null);
-        dispatch('allUploadsComplete', { analyses });
-      }
-
-    } catch (err) {
-      clearInterval(progressInterval);
-      const errorMsg = err instanceof Error ? err.message : 'Upload failed';
-      
-      uploads = uploads.map(u => 
-        u.id === upload.id 
-          ? { ...u, isUploading: false, progress: 0, error: errorMsg }
-          : u
-      );
-      
-      dispatch('uploadError', { id: upload.id, error: errorMsg });
-    }
-  }
-
-  async function uploadBatchFiles(files: File[]) {
-    isBatchUploading = true;
-    batchUploadProgress = 0;
-    dispatch('batchUploadStart', { fileCount: files.length });
-
-    // Simulate progress
-    const progressInterval = setInterval(() => {
-      batchUploadProgress = Math.min(batchUploadProgress + 10, 90);
-    }, 300);
-
-    try {
+      // Create FormData with all images
       const formData = new FormData();
-      files.forEach(file => formData.append('files', file));
-
+      uploads.forEach(upload => {
+        formData.append('files', upload.file);
+      });
+      
+      // Update progress
+      const progressInterval = setInterval(() => {
+        uploads = uploads.map(u => ({
+          ...u,
+          progress: Math.min(u.progress + 5, 95)
+        }));
+      }, 200);
+      
       const response = await fetch('/api/analyze-batch', {
         method: 'POST',
-        body: formData,
+        body: formData
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: 'Batch upload failed' }));
-        throw new Error(errorData.detail || 'Batch upload failed');
-      }
-
-      const result = await response.json();
       
       clearInterval(progressInterval);
-      batchUploadProgress = 100;
       
-      dispatch('batchUploadSuccess', { 
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Analysis failed' }));
+        throw new Error(errorData.detail || 'Analysis failed');
+      }
+      
+      const result = await response.json();
+      
+      // Mark all uploads as complete
+      uploads = uploads.map(u => ({
+        ...u,
+        isUploading: false,
+        progress: 100
+      }));
+      
+      // Store synthesis result
+      synthesis = result.synthesis;
+      
+      // Dispatch completion event
+      dispatch('analysisComplete', { 
         synthesis: result.synthesis,
         individualAnalyses: result.individual_analyses
       });
-
-      // Create upload entries for display
-      const newUploads: ImageUpload[] = files.map((file, index) => ({
-        id: generateId(),
-        file,
-        previewUrl: URL.createObjectURL(file),
-        isUploading: false,
-        progress: 100,
-        error: null,
-        analysis: result.individual_analyses[index] || null,
-      }));
       
-      uploads = [...uploads, ...newUploads];
-
     } catch (err) {
       clearInterval(progressInterval);
-      const errorMsg = err instanceof Error ? err.message : 'Batch upload failed';
-      dispatch('batchUploadError', { error: errorMsg });
+      const errorMsg = err instanceof Error ? err.message : 'Analysis failed';
       error = errorMsg;
+      
+      // Mark all uploads as failed
+      uploads = uploads.map(u => ({
+        ...u,
+        isUploading: false,
+        progress: 0,
+        error: errorMsg
+      }));
+      
+      dispatch('uploadError', { error: errorMsg });
     } finally {
-      setTimeout(() => {
-        isBatchUploading = false;
-        batchUploadProgress = 0;
-      }, 500);
+      isAnalyzing = false;
     }
-  }
-
-  function fileToBase64(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        // Remove the data:image/... prefix to get just the base64 data
-        const base64String = (reader.result as string).split(',')[1];
-        resolve(base64String);
-      };
-      reader.onerror = reject;
-    });
   }
 
   function handleDrop(e: DragEvent) {
@@ -243,7 +158,7 @@
     const files = e.dataTransfer?.files;
     if (files && files.length > 0) {
       const fileArray = Array.from(files);
-      handleFileSelect(multiple ? fileArray : [fileArray[0]]);
+      handleFileSelect(fileArray);
     }
   }
 
@@ -262,7 +177,7 @@
     const files = target.files;
     if (files && files.length > 0) {
       const fileArray = Array.from(files);
-      handleFileSelect(multiple ? fileArray : [fileArray[0]]);
+      handleFileSelect(fileArray);
     }
     // Reset input so the same file can be selected again
     target.value = '';
@@ -274,6 +189,11 @@
       URL.revokeObjectURL(upload.previewUrl);
     }
     uploads = uploads.filter(u => u.id !== id);
+    
+    // If we removed all uploads, clear synthesis
+    if (uploads.length === 0) {
+      synthesis = null;
+    }
   }
 
   function clearAll() {
@@ -281,6 +201,7 @@
       URL.revokeObjectURL(upload.previewUrl);
     });
     uploads = [];
+    synthesis = null;
     error = null;
   }
 
@@ -293,7 +214,7 @@
   });
 </script>
 
-<div class="image-upload">
+<div class="multi-image-upload">
   <div 
     class="upload-zone {isDragging ? 'dragging' : ''}"
     on:drop={handleDrop}
@@ -301,43 +222,29 @@
     on:dragleave={handleDragLeave}
     role="button"
     tabindex="0"
-    aria-label="Image upload zone"
+    aria-label="Multi-image upload zone"
   >
     <div class="upload-content">
       <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
       </svg>
-      <h3>Upload Property {multiple ? 'Images' : 'Image'}</h3>
-      <p>Drag and drop your {multiple ? 'images' : 'image'} here, or <label class="browse-link">
+      <h3>Upload Multiple Property Images</h3>
+      <p>Drag and drop your images here, or <label class="browse-link">
         <input
           type="file"
           accept={acceptedTypes.join(',')}
-          {multiple}
+          multiple
           on:change={handleFileInput}
           class="hidden-input"
         />
         browse
       </label></p>
-      <small>Supports: {acceptedTypes.map(t => t.split('/')[1]).join(', ')} (max {maxFileSize / (1024 * 1024)}MB{multiple ? ' each' : ''})</small>
-      {#if multiple && uploads.length > 0}
+      <small>Supports: {acceptedTypes.map(t => t.split('/')[1]).join(', ')} (max {maxFileSize / (1024 * 1024)}MB each, up to {maxImages} images)</small>
+      {#if uploads.length > 0}
         <button class="clear-all-btn" on:click={clearAll}>Clear All ({uploads.length})</button>
       {/if}
     </div>
   </div>
-
-  {#if isBatchUploading}
-    <div class="batch-upload-progress" in:fade={{ duration: 300 }}>
-      <div class="progress-header">
-        <svg class="progress-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-        </svg>
-        <span>Analyzing {uploads.length} images...</span>
-      </div>
-      <div class="progress-bar">
-        <div class="progress-fill" style="width: {batchUploadProgress}%"></div>
-      </div>
-    </div>
-  {/if}
 
   {#if error}
     <div class="error-message" in:fade={{ duration: 300 }}>
@@ -375,35 +282,68 @@
                     <div class="progress-bar">
                       <div class="progress-fill" style="width: {upload.progress}%"></div>
                     </div>
-                    <p>Uploading and analyzing...</p>
+                    <p>Analyzing...</p>
                   </div>
                 </div>
               {/if}
             </div>
-
-            {#if upload.error}
-              <div class="upload-error">
-                <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="8" x2="12" y2="12" />
-                  <line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
-                {upload.error}
-              </div>
-            {/if}
           </div>
-
-          {#if upload.analysis}
-            <VisionAnalysisDisplay analysis={upload.analysis} compact={true} />
-          {/if}
         </div>
-      {/each}
+      {/each}}
+    </div>
+    
+    <div class="actions">
+      <button 
+        class="analyze-btn"
+        on:click={analyzeAllImages}
+        disabled={isAnalyzing || uploads.length === 0}
+      >
+        {isAnalyzing ? 'Analyzing Images...' : `Analyze ${uploads.length} Image{uploads.length === 1 ? '' : 's'}`}
+      </button>
+    </div>
+  {/if}
+
+  {#if synthesis}
+    <div class="synthesis-results" in:fade={{ duration: 300 }}>
+      <div class="synthesis-header">
+        <h3>🏠 Property Overview</h3>
+        <span class="room-count">{synthesis.total_rooms} room{synthesis.total_rooms === 1 ? '' : 's'} analyzed</span>
+      </div>
+      
+      <div class="unified-description">
+        {synthesis.unified_description}
+      </div>
+      
+      {#if synthesis.room_breakdown && Object.keys(synthesis.room_breakdown).length > 0}
+        <div class="room-breakdown">
+          <h4>Room Summary:</h4>
+          <div class="room-list">
+            {#each Object.entries(synthesis.room_breakdown) as [roomType, count]}
+              <div class="room-item">
+                <span class="room-name">{roomType.replace('_', ' ').toLowerCase()}</span>
+                <span class="room-count">{count}</span>
+              </div>
+            {/each}
+          </div>
+        </div>
+      {/if}
+      
+      {#if synthesis.property_overview?.common_amenities?.length > 0}
+        <div class="common-amenities">
+          <h4>Notable Features:</h4>
+          <div class="amenity-tags">
+            {#each synthesis.property_overview.common_amenities.slice(0, 8) as amenity}
+              <span class="amenity-tag">{amenity.replace('_', ' ')}</span>
+            {/each}
+          </div>
+        </div>
+      {/if}
     </div>
   {/if}
 </div>
 
 <style>
-  .image-upload {
+  .multi-image-upload {
     width: 100%;
     margin: 0 auto;
   }
@@ -546,25 +486,6 @@
     margin-bottom: 1rem;
   }
 
-  .upload-error {
-    background: #fef2f2;
-    border: 1px solid #fca5a5;
-    border-radius: 6px;
-    padding: 0.75rem;
-    margin-top: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: #dc2626;
-    font-size: 0.875rem;
-  }
-
-  .upload-error .error-icon {
-    width: 1rem;
-    height: 1rem;
-    flex-shrink: 0;
-  }
-
   .preview-header {
     display: flex;
     justify-content: space-between;
@@ -650,45 +571,144 @@
     transition: width 0.3s ease;
   }
 
-  /* Batch upload progress styles */
-  .batch-upload-progress {
-    background: #eff6ff;
-    border: 1px solid #3b82f6;
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
+  .actions {
+    margin-top: 1.5rem;
     text-align: center;
   }
 
-  .progress-header {
+  .analyze-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .analyze-btn:hover:not(:disabled) {
+    background: #2563eb;
+  }
+
+  .analyze-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+  }
+
+  .synthesis-results {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  .synthesis-header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
     margin-bottom: 1rem;
-    color: #1e40af;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .synthesis-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+  }
+
+  .room-count {
+    background: #3b82f6;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
     font-weight: 500;
   }
 
-  .progress-icon {
-    width: 1.5rem;
-    height: 1.5rem;
-    color: #3b82f6;
+  .unified-description {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    line-height: 1.6;
+    color: #374151;
   }
 
-  .batch-upload-progress .progress-bar {
-    width: 100%;
-    max-width: 300px;
-    height: 8px;
-    background: #dbeafe;
-    border-radius: 4px;
-    overflow: hidden;
-    margin: 0 auto;
+  .room-breakdown {
+    margin-bottom: 1rem;
   }
 
-  .batch-upload-progress .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%);
-    transition: width 0.5s ease;
+  .room-breakdown h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .room-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .room-item {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .room-name {
+    font-size: 0.875rem;
+    color: #475569;
+    text-transform: capitalize;
+  }
+
+  .room-count {
+    background: #3b82f6;
+    color: white;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    min-width: 1.5rem;
+    text-align: center;
+  }
+
+  .common-amenities {
+    margin-top: 1rem;
+  }
+
+  .common-amenities h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .amenity-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .amenity-tag {
+    background: #e0f2fe;
+    color: #0369a1;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid #bae6fd;
   }
 </style>

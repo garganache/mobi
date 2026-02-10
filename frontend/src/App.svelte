@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { fade, fly } from 'svelte/transition';
   import ImageUpload from './lib/components/ImageUpload.svelte';
+  import SynthesisDisplay from './lib/components/SynthesisDisplay.svelte';
   import AIMessage from './lib/components/AIMessage.svelte';
   import AnimatedDynamicForm from './lib/components/AnimatedDynamicForm.svelte';
   import { listingStore } from './lib/stores/listingStore';
@@ -21,6 +22,8 @@
   let formSchema: FieldSchema[] = [];
   let isLoading = false;
   let error: string | null = null;
+  let synthesisData: any = null;
+  let individualAnalyses: any[] = [];
 
   // Load saved state on mount
   onMount(() => {
@@ -30,6 +33,22 @@
   async function handleImageUpload(event: CustomEvent) {
     const { response } = event.detail;
     await handleAnalyzeResponse(response);
+  }
+
+  async function handleBatchUpload(event: CustomEvent) {
+    const { synthesis, individualAnalyses: analyses } = event.detail;
+    synthesisData = synthesis;
+    individualAnalyses = analyses;
+    
+    // Update AI message to show synthesis
+    if (synthesis && synthesis.unified_description) {
+      aiMessage = synthesis.unified_description;
+    } else {
+      aiMessage = `Successfully analyzed ${synthesis?.total_rooms || 0} rooms. Check the overview above for details.`;
+    }
+    
+    // Trigger form progression
+    await analyzeStep('field_update');
   }
 
   async function handleFieldUpdate() {
@@ -154,6 +173,15 @@
   </header>
 
   <div class="app-content">
+    {#if synthesisData}
+      <div class="synthesis-container" in:fade={{ duration: 400 }}>
+        <SynthesisDisplay 
+          synthesis={synthesisData} 
+          individualAnalyses={individualAnalyses}
+        />
+      </div>
+    {/if}
+
     {#if aiMessage}
       <div class="ai-message-container" in:fly={{ y: -20, duration: 400 }}>
         <AIMessage 
@@ -172,7 +200,9 @@
           <p>Upload an image of your property to begin creating your listing</p>
           <ImageUpload 
             on:uploadSuccess={handleImageUpload}
+            on:batchUploadSuccess={handleBatchUpload}
             on:uploadError={(e) => error = e.detail.error}
+            batchMode={true}
           />
         </div>
       </div>
@@ -435,5 +465,13 @@
     .form-container {
       padding: 1rem;
     }
+  }
+
+  .synthesis-container {
+    margin-bottom: 1rem;
+  }
+
+  .synthesis-container :global(.synthesis-display) {
+    margin: 0;
   }
 </style>

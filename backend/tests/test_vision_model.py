@@ -21,6 +21,8 @@ from app.vision_model import (
     create_vision_model,
     preprocess_image,
     analyze_property_image,
+    analyze_multiple_images,
+    synthesize_property_overview,
     get_vision_model,
     DEFAULT_PROPERTY_PROMPT,
 )
@@ -352,6 +354,259 @@ class TestRetryLogic:
     def test_api_timeout_handling(self):
         """Test handling of API timeouts."""
         pytest.skip("Skipping timeout test - requires openai package")
+
+
+class TestAnalyzeMultipleImages:
+    """Test cases for analyze_multiple_images function."""
+    
+    def test_analyze_multiple_images_basic(self):
+        """Test basic multi-image analysis functionality."""
+        # Create 3 test images
+        images = [
+            create_test_image(size=(300, 200), color='red'),    # Wide (exterior-like)
+            create_test_image(size=(200, 300), color='blue'), # Tall (kitchen-like)  
+            create_test_image(size=(200, 200), color='green')   # Square (living room)
+        ]
+        
+        result = analyze_multiple_images(images, model_type="mock")
+        
+        assert isinstance(result, dict)
+        assert "individual_analyses" in result
+        assert "synthesis" in result
+        assert len(result["individual_analyses"]) == 3
+        
+        # Check each individual analysis
+        for i, analysis in enumerate(result["individual_analyses"]):
+            assert analysis["image_index"] == i
+            assert "description" in analysis
+            assert "property_type" in analysis
+    
+    def test_analyze_multiple_images_synthesis_structure(self):
+        """Test that synthesis has correct structure."""
+        images = [create_test_image() for _ in range(3)]
+        
+        result = analyze_multiple_images(images, model_type="mock")
+        synthesis = result["synthesis"]
+        
+        assert "total_rooms" in synthesis
+        assert "room_breakdown" in synthesis
+        assert "amenities_by_room" in synthesis
+        assert "unified_description" in synthesis
+        assert "property_overview" in synthesis
+        
+        # Should have reasonable room counts
+        assert synthesis["total_rooms"] >= 0
+        assert isinstance(synthesis["room_breakdown"], dict)
+    
+    def test_analyze_multiple_images_with_different_room_types(self):
+        """Test analysis with images representing different rooms."""
+        # Create 6 images representing different rooms
+        images = [
+            create_test_image(size=(250, 300), color='red'),    # Kitchen
+            create_test_image(size=(200, 250), color='blue'),   # Bedroom 1
+            create_test_image(size=(200, 250), color='green'),  # Bedroom 2
+            create_test_image(size=(300, 200), color='yellow'), # Living room
+            create_test_image(size=(150, 200), color='purple'), # Bathroom
+            create_test_image(size=(400, 150), color='orange'), # Hallway/Exterior
+        ]
+        
+        result = analyze_multiple_images(images, model_type="mock")
+        
+        assert result["synthesis"]["total_rooms"] > 0
+        assert len(result["individual_analyses"]) == 6
+        
+        # Check that we have a coherent unified description
+        unified_desc = result["synthesis"]["unified_description"]
+        assert len(unified_desc) > 0
+        assert "rooms" in unified_desc.lower() or "room" in unified_desc.lower()
+    
+    def test_analyze_multiple_images_handles_empty_list(self):
+        """Test handling of empty image list."""
+        result = analyze_multiple_images([], model_type="mock")
+        
+        assert result["individual_analyses"] == []
+        assert result["synthesis"]["total_rooms"] == 0
+        assert result["synthesis"]["unified_description"] == "No images analyzed."
+    
+    def test_analyze_multiple_images_handles_single_image(self):
+        """Test that single image works correctly."""
+        images = [create_test_image()]
+        
+        result = analyze_multiple_images(images, model_type="mock")
+        
+        assert len(result["individual_analyses"]) == 1
+        assert result["synthesis"]["total_rooms"] >= 0
+        
+        # Should mention "1 room" or similar in description
+        unified_desc = result["synthesis"]["unified_description"]
+        assert len(unified_desc) > 0
+
+
+class TestSynthesizePropertyOverview:
+    """Test cases for synthesize_property_overview function."""
+    
+    def test_synthesize_empty_analyses(self):
+        """Test synthesis with empty analyses."""
+        result = synthesize_property_overview([])
+        
+        assert result["total_rooms"] == 0
+        assert result["room_breakdown"] == {}
+        assert result["amenities_by_room"] == {}
+        assert "No images analyzed" in result["unified_description"]
+    
+    def test_synthesize_single_analysis(self):
+        """Test synthesis with single analysis."""
+        analyses = [{
+            "description": "A modern kitchen with granite countertops",
+            "property_type": "apartment",
+            "rooms": {"kitchen": 1},
+            "amenities": ["granite_counters", "stainless_steel"],
+            "style": "modern",
+            "materials": ["granite_counters", "stainless_steel"],
+            "condition": "excellent"
+        }]
+        
+        result = synthesize_property_overview(analyses)
+        
+        assert result["total_rooms"] == 1
+        assert result["room_breakdown"]["kitchen"] == 1
+        assert "granite_counters" in result["amenities_by_room"]["room_1"]
+        assert "apartment" in result["property_overview"]["property_type"]
+        assert "modern" in result["property_overview"]["style"]
+    
+    def test_synthesize_multiple_rooms(self):
+        """Test synthesis with multiple different rooms."""
+        analyses = [
+            {
+                "description": "Kitchen with granite",
+                "property_type": "apartment",
+                "rooms": {"kitchen": 1},
+                "amenities": ["granite_counters", "dishwasher"],
+                "style": "modern",
+                "materials": ["granite_counters"],
+                "condition": "excellent"
+            },
+            {
+                "description": "Bedroom with hardwood",
+                "property_type": "apartment", 
+                "rooms": {"bedroom": 1},
+                "amenities": ["hardwood_floors", "large_window"],
+                "style": "modern",
+                "materials": ["hardwood_floors"],
+                "condition": "good"
+            },
+            {
+                "description": "Living room with fireplace",
+                "property_type": "apartment",
+                "rooms": {"living_room": 1}, 
+                "amenities": ["fireplace", "hardwood_floors"],
+                "style": "modern",
+                "materials": ["hardwood_floors"],
+                "condition": "good"
+            }
+        ]
+        
+        result = synthesize_property_overview(analyses)
+        
+        assert result["total_rooms"] == 3
+        assert result["room_breakdown"]["kitchen"] == 1
+        assert result["room_breakdown"]["bedroom"] == 1
+        assert result["room_breakdown"]["living_room"] == 1
+        
+        # Check that amenities are aggregated
+        assert "granite_counters" in result["property_overview"]["common_amenities"]
+        assert "hardwood_floors" in result["property_overview"]["common_amenities"]
+        
+        # Check unified description mentions key features
+        unified_desc = result["unified_description"]
+        assert "3 rooms" in unified_desc
+        assert "kitchen" in unified_desc.lower()
+        assert "bedroom" in unified_desc.lower()
+        assert "living room" in unified_desc.lower()
+    
+    def test_synthesize_aggregates_amenities_correctly(self):
+        """Test that amenities are properly aggregated across rooms."""
+        analyses = [
+            {
+                "rooms": {"bedroom": 2},
+                "amenities": ["hardwood_floors", "closet", "window"],
+                "style": "modern",
+                "property_type": "apartment"
+            },
+            {
+                "rooms": {"kitchen": 1},
+                "amenities": ["granite_counters", "stainless_steel", "dishwasher"],
+                "style": "modern", 
+                "property_type": "apartment"
+            }
+        ]
+        
+        result = synthesize_property_overview(analyses)
+        
+        # Should have 3 total rooms (2 bedroom + 1 kitchen)
+        assert result["total_rooms"] == 3
+        
+        # Should have amenities from both rooms
+        common_amenities = result["property_overview"]["common_amenities"]
+        assert "hardwood_floors" in common_amenities
+        assert "granite_counters" in common_amenities
+        assert "stainless_steel" in common_amenities
+    
+    def test_synthesize_handles_mixed_conditions(self):
+        """Test that mixed conditions are handled correctly."""
+        analyses = [
+            {"condition": "excellent", "rooms": {"room": 1}},
+            {"condition": "good", "rooms": {"room": 1}},
+            {"condition": "fair", "rooms": {"room": 1}},
+        ]
+        
+        result = synthesize_property_overview(analyses)
+        
+        # Should return "mixed" for varied conditions
+        assert result["property_overview"]["condition"] == "mixed"
+    
+    def test_synthesize_handles_uniform_conditions(self):
+        """Test that uniform conditions are preserved."""
+        analyses = [
+            {"condition": "excellent", "rooms": {"room": 1}},
+            {"condition": "excellent", "rooms": {"room": 1}},
+            {"condition": "excellent", "rooms": {"room": 1}},
+        ]
+        
+        result = synthesize_property_overview(analyses)
+        
+        # Should preserve the uniform condition
+        assert result["property_overview"]["condition"] == "excellent"
+    
+    def test_synthesize_generates_coherent_description(self):
+        """Test that unified description is coherent and informative."""
+        analyses = [
+            {
+                "rooms": {"bedroom": 2, "kitchen": 1, "living_room": 1},
+                "amenities": ["hardwood_floors", "fireplace", "granite_counters"],
+                "style": "modern",
+                "property_type": "apartment"
+            }
+        ]
+        
+        result = synthesize_property_overview(analyses)
+        desc = result["unified_description"]
+        
+        # Should mention total rooms
+        assert "4 rooms" in desc or "four rooms" in desc
+        
+        # Should mention room breakdown
+        assert "2 Bedrooms" in desc or "2 bedrooms" in desc
+        assert "1 Kitchen" in desc or "1 kitchen" in desc
+        assert "1 Living Room" in desc or "1 living room" in desc or "1 Living room" in desc
+        
+        # Should mention key features (based on actual implementation)
+        assert "granite countertops" in desc.lower()
+        assert "fireplace" in desc
+        
+        # Should mention property type and style
+        assert "apartment" in desc
+        assert "modern" in desc
 
 
 if __name__ == "__main__":

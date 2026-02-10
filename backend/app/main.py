@@ -1,8 +1,8 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 import json
 
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy import Column, DateTime, Integer, Text, create_engine
@@ -19,7 +19,7 @@ from app.schemas import (
     FieldOption,
 )
 from app.orchestrator import orchestrator
-from app.vision_model import analyze_property_image, VisionModelError
+from app.vision_model import analyze_property_image, analyze_multiple_images, VisionModelError
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
@@ -334,3 +334,77 @@ def analyze_step(request: AnalyzeStepRequest, db: Session = Depends(get_db)):
         completion_percentage=completion_percentage,
         vision_analysis=vision_analysis,
     )
+
+
+@app.post("/api/analyze-batch")
+async def analyze_batch_images(files: List[UploadFile] = File(...)):
+    """
+    Analyze multiple property images and return correlated results.
+    
+    Accepts multiple image files and returns both individual analyses
+    and a synthesized overview of the entire property.
+    
+    ## Request
+    - `files`: List of image files (JPEG, PNG, etc.)
+    
+    ## Response
+    ```json
+    {
+        "status": "success",
+        "individual_analyses": [...],  # Analysis of each image
+        "synthesis": {
+            "total_rooms": 6,
+            "room_breakdown": {"bedroom": 2, "kitchen": 1, ...},
+            "amenities_by_room": {...},
+            "unified_description": "This property has 6 rooms...",
+            "property_overview": {...}
+        }
+    }
+    ```
+    """
+    if not files:
+        raise HTTPException(status_code=400, detail="No files provided")
+    
+    if len(files) > 10:
+        raise HTTPException(status_code=400, detail="Maximum 10 images allowed per batch")
+    
+    try:
+        # Read all image data
+        image_data_list = []
+        for file in files:
+            # Validate file type
+            if not file.content_type or not file.content_type.startswith("image/"):
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"File {file.filename} is not an image"
+                )
+            
+            image_data = await file.read()
+            if len(image_data) == 0:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"File {file.filename} is empty"
+                )
+            
+            image_data_list.append(image_data)
+        
+        # Analyze multiple images
+        model_type = "openai" if os.getenv("OPENAI_API_KEY") else "mock"
+        result = analyze_multiple_images(
+            images=image_data_list,
+            model_type=model_type,
+            api_key=os.getenv("OPENAI_API_KEY") if model_type == "openai" else None
+        )
+        
+        return {
+            "status": "success",
+            "individual_analyses": result["individual_analyses"],
+            "synthesis": result["synthesis"]
+        }
+        
+    except VisionModelError as e:
+        logger.error(f"Vision model error in batch analysis: {e}")
+        raise HTTPException(status_code=500, detail=f"Image analysis failed: {str(e)}")
+    except Exception as e:
+        logger.error(f"Unexpected error in batch analysis: {e}")
+        raise HTTPException(status_code=500, detail=f"Batch analysis failed: {str(e)}")
