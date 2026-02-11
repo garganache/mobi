@@ -17,3 +17,15 @@ frontend/dist/
 frontend/test-results/
 frontend/playwright-report/
 test-run.log
+
+# Environment files
+.env
+*.env.local
+
+# Test artifacts
+frontend/playwright-report*/
+frontend/test-results/
+*.log
+
+# Temporary files
+cleanup-list.txt
