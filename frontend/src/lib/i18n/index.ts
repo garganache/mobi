@@ -91,6 +91,7 @@ export const translations = {
     'room.dining_room': 'Cameră de Mâncare',
     'room.office': 'Birou',
     'room.balcony': 'Balcon',
+    'room.staircase': 'Scară',
     
     // Amenities
     'amenity.hardwood_floors': 'Parchet',
@@ -118,6 +119,14 @@ export const translations = {
     'amenity.french_doors': 'Uși Franceze',
     'amenity.wooden_staircase': 'Scară de Lemn',
     'amenity.windows': 'Ferestre',
+    'amenity.glass-paneled_doors': 'Uși cu Panouri de Sticlă',
+    'amenity.glass_paneled_doors': 'Uși cu Panouri de Sticlă',
+    'amenity.double_french_doors': 'Uși Franceze Duble',
+    'amenity.outdoor_seating_area': 'Zona de Relaxare în Aer Liber',
+    'amenity.decorative_planters': 'Ghivece Decorative',
+    'amenity.candle_lighting': 'Iluminat cu Lumânări',
+    'amenity.multiple_workstations': 'Posturi de Lucru Multiple',
+    'amenity.parquet_floors': 'Parchet',
     
     // Dropdown Options
     // Garage types
