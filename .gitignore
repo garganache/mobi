@@ -29,3 +29,14 @@ frontend/test-results/
 
 # Temporary files
 cleanup-list.txt
+
+# Test files in root
+/test_*.py
+/debug_*.py
+/create_test_*.py
+
+# SQLite databases
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
