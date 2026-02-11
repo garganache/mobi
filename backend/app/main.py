@@ -370,6 +370,103 @@ async def analyze_batch_images(files: List[UploadFile] = File(...)):
         raise HTTPException(status_code=500, detail=f"Analiza lotului a eșuat: {str(e)}")
 
 
+@app.get("/api/listings")
+def get_all_listings(
+    limit: int = 100,
+    offset: int = 0,
+    db: Session = Depends(get_db)
+):
+    """
+    Get all property listings with pagination support.
+    
+    Query Parameters:
+    - `limit`: Maximum number of listings to return (default: 100, max: 1000)
+    - `offset`: Number of listings to skip (default: 0)
+    
+    Returns a JSON array of listing objects with the following fields:
+    - id: Unique identifier
+    - property_type: Type of property (apartment, house, etc.)
+    - price: Price in cents/dollars
+    - bedrooms: Number of bedrooms
+    - bathrooms: Number of bathrooms
+    - square_feet: Living area in square feet
+    - address: Street address
+    - city: City name
+    - state: State code
+    - zip_code: ZIP/postal code
+    - status: Current status (draft, published, archived)
+    - images: Array of associated images with metadata
+    - synthesis: Property synthesis data if available
+    - created_at: Creation timestamp
+    - updated_at: Last update timestamp
+    """
+    # Validate limit to prevent excessive queries
+    if limit > 1000:
+        limit = 1000
+    if limit < 1:
+        limit = 1
+    if offset < 0:
+        offset = 0
+    
+    # Query listings with related data
+    listings = db.query(Listing).order_by(Listing.created_at.desc()).limit(limit).offset(offset).all()
+    
+    # Convert to response format
+    result = []
+    for listing in listings:
+        # Get images with their analysis data
+        images = []
+        for image in listing.images:
+            images.append({
+                "id": image.id,
+                "image_data": image.image_data,
+                "image_url": image.image_url,
+                "ai_description": image.ai_description,
+                "detected_rooms": image.detected_rooms,
+                "detected_amenities": image.detected_amenities,
+                "property_type": image.property_type,
+                "style": image.style,
+                "condition": image.condition,
+                "order_index": image.order_index,
+                "created_at": image.created_at.isoformat() if image.created_at else None
+            })
+        
+        # Get synthesis data if available
+        synthesis = None
+        if listing.synthesis:
+            synthesis = {
+                "id": listing.synthesis.id,
+                "total_rooms": listing.synthesis.total_rooms,
+                "layout_type": listing.synthesis.layout_type,
+                "unified_description": listing.synthesis.unified_description,
+                "room_breakdown": listing.synthesis.room_breakdown,
+                "property_overview": listing.synthesis.property_overview,
+                "interior_features": listing.synthesis.interior_features,
+                "exterior_features": listing.synthesis.exterior_features,
+                "created_at": listing.synthesis.created_at.isoformat() if listing.synthesis.created_at else None
+            }
+        
+        result.append({
+            "id": listing.id,
+            "property_type": listing.property_type,
+            "price": listing.price,
+            "bedrooms": listing.bedrooms,
+            "bathrooms": listing.bathrooms,
+            "square_feet": listing.square_feet,
+            "address": listing.address,
+            "city": listing.city,
+            "state": listing.state,
+            "zip_code": listing.zip_code,
+            "status": listing.status,
+            "images": images,
+            "synthesis": synthesis,
+            "created_at": listing.created_at.isoformat() if listing.created_at else None,
+            "updated_at": listing.updated_at.isoformat() if listing.updated_at else None
+        })
+    
+    return result
+
+
 @app.post("/api/listings", response_model=SaveListingResponse)
 def save_listing(request: SaveListingRequest, db: Session = Depends(get_db)):
     """
@@ -465,6 +562,81 @@ def save_listing(request: SaveListingRequest, db: Session = Depends(get_db)):
 # Romanian error handling
 from fastapi.responses import JSONResponse
 from fastapi import Request
+
+
+@app.get("/api/listings/{listing_id}")
+def get_listing(listing_id: int, db: Session = Depends(get_db)):
+    """
+    Get a single listing by ID.
+    
+    Returns the complete listing with all fields including:
+    - Property details (type, price, bedrooms, bathrooms, square_feet)
+    - Location (address, city, state, zip_code)
+    - Status and metadata (created_at, updated_at)
+    - Related images and synthesis data
+    
+    Returns 404 if listing not found.
+    """
+    listing = db.query(Listing).filter(Listing.id == listing_id).first()
+    
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    
+    # Build the response with all fields
+    response_data = {
+        "id": listing.id,
+        "property_type": listing.property_type,
+        "price": listing.price,
+        "bedrooms": listing.bedrooms,
+        "bathrooms": listing.bathrooms,
+        "square_feet": listing.square_feet,
+        "address": listing.address,
+        "city": listing.city,
+        "state": listing.state,
+        "zip_code": listing.zip_code,
+        "status": listing.status,
+        "created_at": listing.created_at.isoformat() if listing.created_at else None,
+        "updated_at": listing.updated_at.isoformat() if listing.updated_at else None,
+    }
+    
+    # Add images if available
+    if listing.images:
+        response_data["images"] = [
+            {
+                "id": img.id,
+                "image_data": img.image_data,
+                "image_url": img.image_url,
+                "ai_description": img.ai_description,
+                "detected_rooms": img.detected_rooms,
+                "detected_amenities": img.detected_amenities,
+                "property_type": img.property_type,
+                "style": img.style,
+                "condition": img.condition,
+                "order_index": img.order_index,
+                "created_at": img.created_at.isoformat() if img.created_at else None,
+            }
+            for img in listing.images
+        ]
+    else:
+        response_data["images"] = []
+    
+    # Add synthesis data if available
+    if listing.synthesis:
+        response_data["synthesis"] = {
+            "id": listing.synthesis.id,
+            "total_rooms": listing.synthesis.total_rooms,
+            "layout_type": listing.synthesis.layout_type,
+            "unified_description": listing.synthesis.unified_description,
+            "room_breakdown": listing.synthesis.room_breakdown,
+            "property_overview": listing.synthesis.property_overview,
+            "interior_features": listing.synthesis.interior_features,
+            "exterior_features": listing.synthesis.exterior_features,
+            "created_at": listing.synthesis.created_at.isoformat() if listing.synthesis.created_at else None,
+        }
+    else:
+        response_data["synthesis"] = None
+    
+    return response_data
 
 
 @app.exception_handler(HTTPException)

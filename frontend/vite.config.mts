@@ -12,4 +12,11 @@ export default defineConfig({
       },
     },
   },
+  // Ensure SPA routing works - all routes fallback to index.html
+  appType: 'spa',
+  historyApiFallback: {
+    rewrites: [
+      { from: /\/listings.*/, to: '/index.html' }
+    ]
+  }
 });
