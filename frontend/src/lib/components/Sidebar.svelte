@@ -1,16 +1,11 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { navigate, useLocation } from 'svelte-routing';
   import { t } from '../i18n';
   
   let isOpen = false;
-  let currentPath = '/';
+  const location = useLocation();
   
-  onMount(() => {
-    // Set current path from window location
-    if (typeof window !== 'undefined') {
-      currentPath = window.location.pathname;
-    }
-  });
+  $: currentPath = $location.pathname;
   
   function toggleMobileMenu() {
     isOpen = !isOpen;
@@ -18,16 +13,13 @@
   
   function handleLinkClick(event: Event, path: string) {
     event.preventDefault();
-    currentPath = path;
-    if (typeof window !== 'undefined') {
-      window.history.pushState({}, '', path);
-      // Close mobile menu on navigation
-      isOpen = false;
-    }
+    navigate(path);
+    // Close mobile menu on navigation
+    isOpen = false;
   }
   
   $: isActiveCreate = currentPath === '/' || currentPath === '/create';
-  $: isActiveListings = currentPath === '/listings';
+  $: isActiveListings = currentPath.startsWith('/listings');
 </script>
 
 <aside class="sidebar" class:mobile-open={isOpen}>
