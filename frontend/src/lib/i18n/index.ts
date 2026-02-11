@@ -114,6 +114,10 @@ export const translations = {
     'amenity.front_porch': 'Pridvor Frontal',
     'amenity.landscaping': 'Peisagistică',
     'amenity.landscape': 'Peisagistică',
+    'amenity.decorative_molding': 'Cornișă Decorativă',
+    'amenity.french_doors': 'Uși Franceze',
+    'amenity.wooden_staircase': 'Scară de Lemn',
+    'amenity.windows': 'Ferestre',
     
     // Dropdown Options
     // Garage types
@@ -149,6 +153,7 @@ export const translations = {
     'button.show': 'Arată',
     'button.saving': 'Se salvează',
     'button.publish_listing': 'Publică Anunț',
+    'button.view_listing': 'Vezi Anunț',
     
     // Messages
     'message.drop_photo': 'Pune o poză pentru a începe anunțul',
