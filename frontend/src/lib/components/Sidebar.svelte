@@ -5,7 +5,7 @@
   let isOpen = false;
   const location = useLocation();
   
-  $: currentPath = $location.pathname;
+  $: currentPath = $location?.pathname || '/';
   
   function toggleMobileMenu() {
     isOpen = !isOpen;
