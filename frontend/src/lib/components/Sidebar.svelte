@@ -3,9 +3,18 @@
   import { t } from '../i18n';
   
   let isOpen = false;
-  const location = useLocation();
+  let location: any;
+  let currentPath = '/';
   
-  $: currentPath = $location?.pathname || '/';
+  try {
+    location = useLocation();
+  } catch (e) {
+    console.warn('Location not available yet');
+  }
+  
+  $: if (location && $location) {
+    currentPath = $location.pathname || '/';
+  }
   
   function toggleMobileMenu() {
     isOpen = !isOpen;

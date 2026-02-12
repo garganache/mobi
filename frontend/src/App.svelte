@@ -4,11 +4,9 @@
   import Home from './routes/Home.svelte';
   import ListingsPage from './routes/listings/ListingsPage.svelte';
   import ListingDetail from './routes/listings/detail/ListingDetail.svelte';
-  
-  export let url = "";
 </script>
 
-<Router {url}>
+<Router>
   <div class="app-container">
     <Sidebar />
     <main class="main-content">
