@@ -347,7 +347,11 @@
         on:click={analyzeAllImages}
         disabled={isAnalyzing || uploads.length === 0}
       >
-        {isAnalyzing ? t('message.analyzing_images', 'ro') : t('button.analyze_images', 'ro').replace('{count}', uploads.length).replace('{plural}', uploads.length === 1 ? '' : 's'))}
+        {#if isAnalyzing}
+          {t('message.analyzing_images', 'ro')}
+        {:else}
+          {t('button.analyze_images', 'ro').replace('{count}', uploads.length).replace('{plural}', uploads.length === 1 ? '' : 's')}
+        {/if}
       </button>
     </div>
   {/if}

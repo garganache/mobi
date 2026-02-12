@@ -35,6 +35,10 @@ cleanup-list.txt
 /debug_*.py
 /create_test_*.py
 
+# Backend test files
+backend/test_*.py
+backend/init_db.py
+
 # SQLite databases
 *.db
 *.db-journal
