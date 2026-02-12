@@ -8,18 +8,18 @@
   export let url = "";
 </script>
 
-<div class="app-container">
-  <Sidebar />
-  <main class="main-content">
-    <Router {url}>
+<Router {url}>
+  <div class="app-container">
+    <Sidebar />
+    <main class="main-content">
       <Route path="/" component={Home} />
       <Route path="/listings" component={ListingsPage} />
       <Route path="/listings/:id" let:params>
         <ListingDetail id={params.id} />
       </Route>
-    </Router>
-  </main>
-</div>
+    </main>
+  </div>
+</Router>
 
 <style>
   .app-container {
